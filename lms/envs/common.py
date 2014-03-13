@@ -1491,3 +1491,7 @@ THIRD_PARTY_AUTH = {}
 ### ADVANCED_SECURITY_CONFIG
 # Empty by default
 ADVANCED_SECURITY_CONFIG = {}
+
+### configuration for Google Analytics and Google Web Master Tools
+GOOGLE_ANALYTICS_ACCOUNT_ID = 'add-your-GA-account-ID-here'
+GOOGLE_SITE_VERIFICATION = 'add-your-Google-site-verification-here'
