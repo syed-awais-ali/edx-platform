@@ -12,6 +12,7 @@ from opaque_keys import InvalidKeyError
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.core.context_processors import csrf
 from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponse
@@ -772,6 +773,7 @@ def xblock_view(request, course_id, usage_id, view_name):
     return JsonResponse({
         'html': fragment.content,
         'resources': fragment.resources,
+        'csrf_token': str(csrf(request)['csrf_token']),
     })
 
 
