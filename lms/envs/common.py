@@ -1284,6 +1284,7 @@ INSTALLED_APPS = (
 
     # EDX API application
     'api_manager',
+    'projects',
 )
 
 ######################### MARKETING SITE ###############################
