@@ -99,7 +99,7 @@ def get_cohorted_commentables(course_id):
     return ans
 
 
-def get_cohort(user, course_id, group_type=CourseUserGroup.COHORT):
+def get_cohort(user, course_id, group_type=CourseUserGroup.COHORT, allow_multiple=False):
     """
     Given a django User and a course_id, return the user's cohort in that
     cohort.
@@ -124,15 +124,18 @@ def get_cohort(user, course_id, group_type=CourseUserGroup.COHORT):
         raise ValueError("Invalid course_id")
 
     if not course.is_cohorted:
-        return None
+        return None if not allow_multiple else []
 
-    if group_type == CourseUserGroup.ANY:
-        raise ValueError("Invalid group_type for get_cohort.")
+    params = {'course_id': course_id,
+              'users__id': user.id}
+    if group_type != CourseUserGroup.ANY:
+        params['group_type'] = group_type
+
+    if allow_multiple:
+        return list(CourseUserGroup.objects.filter(**params))
 
     try:
-        return CourseUserGroup.objects.get(course_id=course_id,
-                                           group_type=group_type,
-                                           users__id=user.id)
+        return CourseUserGroup.objects.get(**params)
     except CourseUserGroup.DoesNotExist:
         # Didn't find the group.  We'll go on to create one if needed.
         pass
@@ -163,38 +166,6 @@ def get_cohort(user, course_id, group_type=CourseUserGroup.COHORT):
 
     user.course_groups.add(group)
     return group
-
-
-def get_cohorts(user, course_id, group_type=CourseUserGroup.COHORT):
-    """
-    Given a django User and a course_id, return the user's cohorts.
-
-    Arguments:
-        user: a Django User object.
-        course_id: string in the format 'org/course/run'
-        group_type: cohort type to query.
-
-    Returns:
-        A list of CourseUserGroup objects if the course is cohorted and the User has a
-        cohort, else an empty list.
-
-    Raises:
-       ValueError if the course_id doesn't exist.
-    """
-    try:
-        course = courses.get_course_by_id(course_id)
-    except Http404:
-        raise ValueError("Invalid course_id")
-
-    if not course.is_cohorted:
-        return []
-
-    params = {'course_id': course_id,
-              'users__id': user.id}
-    if group_type != CourseUserGroup.ANY:
-        params['group_type'] = group_type
-
-    return list(CourseUserGroup.objects.filter(**params))
 
 
 def get_course_cohorts(course_id, group_type=CourseUserGroup.COHORT):
