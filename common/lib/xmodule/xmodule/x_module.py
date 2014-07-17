@@ -1162,6 +1162,7 @@ class DiscussionService(object):
         from course_groups.models import CourseUserGroup
         from course_groups.cohorts import (
             is_course_cohorted,
+            get_cohort,
             get_cohort_id,
             get_cohorted_commentables,
             get_course_cohorts
