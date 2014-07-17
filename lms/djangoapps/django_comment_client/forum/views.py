@@ -13,9 +13,9 @@ import newrelic.agent
 from edxmako.shortcuts import render_to_response
 from courseware.courses import get_course_with_access
 from course_groups.cohorts import CourseUserGroup
-from course_groups.cohorts import (is_course_cohorted, get_cohort_id, is_commentable_cohorted,
-                                   get_cohorted_commentables, get_course_cohorts, get_cohort_by_id,
-                                   get_cohorts)
+from course_groups.cohorts import (is_course_cohorted, get_cohort, get_cohort_id,
+                                   is_commentable_cohorted, get_cohorted_commentables,
+                                   get_course_cohorts, get_cohort_by_id)
 from courseware.access import has_access
 
 from django_comment_client.permissions import cached_has_permission
@@ -73,7 +73,8 @@ def get_threads(request, course_id, discussion_id=None, per_page=THREADS_PER_PAG
 
     if not group_id:
         if not cached_has_permission(request.user, "see_all_cohorts", course_id):
-            user_cohorts = get_cohorts(request.user, course_id, group_type=CourseUserGroup.ANY)
+            user_cohorts = get_cohort(request.user, course_id,
+                                      group_type=CourseUserGroup.ANY, allow_multiple=True)
             user_cohort_ids = [str(cohort.id) for cohort in user_cohorts]
             group_ids = user_cohort_ids
     else:
@@ -150,7 +151,8 @@ def inline_discussion(request, course_id, discussion_id):
 
         else:
             #students can only select in their own cohorts
-            cohorts = get_cohorts(request.user, course_id, group_type=CourseUserGroup.ANY)
+            cohorts = get_cohort(request.user, course_id,
+                                 group_type=CourseUserGroup.ANY, allow_multiple=True)
             for cohort in cohorts:
                 cohorts_list.append({'name': cohort.name, 'id': cohort.id})
 
@@ -208,7 +210,8 @@ def forum_form_discussion(request, course_id):
             cohorts = get_course_cohorts(course_id)
             cohorted_commentables = get_cohorted_commentables(course_id)
 
-            user_cohorts = get_cohorts(request.user, course_id, group_type=CourseUserGroup.ANY)
+            user_cohorts = get_cohort(request.user, course_id,
+                                      group_type=CourseUserGroup.ANY, allow_multiple=True)
             user_cohort_ids = [cohort.id for cohort in user_cohorts]
 
         context = {
@@ -297,7 +300,8 @@ def single_thread(request, course_id, discussion_id, thread_id):
         with newrelic.agent.FunctionTrace(nr_transaction, "get_cohort_info"):
             cohorts = get_course_cohorts(course_id)
             cohorted_commentables = get_cohorted_commentables(course_id)
-            user_cohorts = get_cohorts(request.user, course_id, group_type=CourseUserGroup.ANY)
+            user_cohorts = get_cohort(request.user, course_id,
+                                      group_type=CourseUserGroup.ANY, allow_multiple=True)
             user_cohort_ids = [cohort.id for cohort in user_cohorts]
 
 

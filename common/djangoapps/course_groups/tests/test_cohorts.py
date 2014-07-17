@@ -5,10 +5,9 @@ from django.conf import settings
 from django.test.utils import override_settings
 
 from course_groups.models import CourseUserGroup
-from course_groups.cohorts import (add_cohort, get_cohort, get_cohorts,
-                                   get_course_cohorts, add_user_to_cohort,
-                                   is_commentable_cohorted, get_cohort_by_name,
-                                   get_cohort_by_id, get_course_cohort_names)
+from course_groups.cohorts import (add_cohort, get_cohort, get_course_cohorts, add_user_to_cohort,
+                                   is_commentable_cohorted, get_cohort_by_name, get_cohort_by_id,
+                                   get_course_cohort_names)
 
 from xmodule.modulestore.django import modulestore, clear_existing_modulestores
 
@@ -304,11 +303,13 @@ class TestCohorts(django.test.TestCase):
 
         # get_cohorts tests
         self.assertEquals(
-            len(get_cohorts(user, course.id, group_type=CourseUserGroup.WORKGROUP)),
+            len(get_cohort(user, course.id,
+                           group_type=CourseUserGroup.WORKGROUP,
+                           allow_multiple=True)),
             1
         )
         self.assertEquals(
-            len(get_cohorts(user, course.id, group_type=CourseUserGroup.ANY)),
+            len(get_cohort(user, course.id, group_type=CourseUserGroup.ANY, allow_multiple=True)),
             2
         )
         self.assertEquals(

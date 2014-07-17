@@ -1162,7 +1162,6 @@ class DiscussionService(object):
         from course_groups.models import CourseUserGroup
         from course_groups.cohorts import (
             is_course_cohorted,
-            get_cohorts,
             get_cohort_id,
             get_cohorted_commentables,
             get_course_cohorts
@@ -1176,7 +1175,8 @@ class DiscussionService(object):
         user_info = cc.User.from_django_user(self.runtime.user).to_dict()
         course_id = self.runtime.course_id
         course = get_course_with_access(self.runtime.user, course_id, 'load_forum')
-        user_cohorts = get_cohorts(user, course_id, group_type=CourseUserGroup.ANY)
+        user_cohorts = get_cohort(user, course_id,
+                                  group_type=CourseUserGroup.ANY, allow_multiple=True)
         user_cohort_ids = [cohort.id for cohort in user_cohorts]
 
 
