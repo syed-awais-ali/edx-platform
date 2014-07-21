@@ -55,3 +55,15 @@ def is_int(value):
         return True
     except ValueError:
         return False
+
+
+def get_course_total_score(course_summary):
+    """
+    Traverse course summary to calculate max possible score for a course
+    """
+    score = 0
+    for chapter in course_summary:  # accumulate score of each chapter
+        for section in chapter['sections']:
+            if section['section_total']:
+                score += section['section_total'][1]
+    return score
