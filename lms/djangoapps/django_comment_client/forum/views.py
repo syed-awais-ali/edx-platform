@@ -14,6 +14,7 @@ from edxmako.shortcuts import render_to_response
 from courseware.courses import get_course_with_access
 from course_groups.cohorts import CourseUserGroup
 from course_groups.cohorts import (is_course_cohorted, get_cohort, get_cohort_id,
+                                   get_cohorted_threads_privacy,
                                    is_commentable_cohorted, get_cohorted_commentables,
                                    get_course_cohorts, get_cohort_by_id)
 from courseware.access import has_access
@@ -79,6 +80,8 @@ def get_threads(request, course_id, discussion_id=None, per_page=THREADS_PER_PAG
                                       group_type=CourseUserGroup.ANY, allow_multiple=True)
             user_cohort_ids = [str(cohort.id) for cohort in user_cohorts]
             group_ids = user_cohort_ids
+            if not group_ids and get_cohorted_threads_privacy(course_id) == 'cohort-only':
+                default_query_params['exclude_groups'] = True
     else:
         group_ids.append(group_id)
 
