@@ -3,6 +3,9 @@ import logging
 import re
 
 from django.conf import settings
+from django.core.handlers.base import BaseHandler
+from django.test.client import RequestFactory
+
 from microsite_configuration import microsite
 from opaque_keys import InvalidKeyError
 from opaque_keys.edx.keys import CourseKey
@@ -61,3 +64,20 @@ def course_id_from_url(url):
             )
 
     return course_key
+
+
+class RequestMock(RequestFactory):
+    """
+    RequestMock is used to create generic/dummy request objects in
+    scenarios where a regular request might not be available for use
+    """
+    def request(self, **request):
+        "Construct a generic request object."
+        request = RequestFactory.request(self, **request)
+        handler = BaseHandler()
+        handler.load_middleware()
+        for middleware_method in handler._request_middleware:
+            if middleware_method(request):
+                raise Exception("Couldn't create request mock object - "
+                                "request middleware returned a response")
+        return request
