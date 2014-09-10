@@ -457,3 +457,8 @@ API_ALLOWED_IP_ADDRESSES = ENV_TOKENS.get('API_ALLOWED_IP_ADDRESSES')
 EXCLUDE_MIDDLEWARE_CLASSES = ENV_TOKENS.get('EXCLUDE_MIDDLEWARE_CLASSES', [])
 
 MIDDLEWARE_CLASSES = tuple(_class for _class in MIDDLEWARE_CLASSES if _class not in EXCLUDE_MIDDLEWARE_CLASSES)
+
+
+############# Student Gradebook #################
+if FEATURES.get('STUDENT_GRADEBOOK') and "'gradebook'" not in INSTALLED_APPS:
+    INSTALLED_APPS += ('gradebook',)
