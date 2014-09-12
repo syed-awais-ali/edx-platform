@@ -18,6 +18,11 @@ def run():
     """
     Executed during django startup
     """
+
+    # Patch the xml libs.
+    from safe_lxml import defuse_xml_libs
+    defuse_xml_libs()
+
     autostartup()
 
     if settings.FEATURES.get('USE_CUSTOM_THEME', False):
