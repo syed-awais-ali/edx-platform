@@ -24,7 +24,6 @@ from path import path
 from datetime import datetime
 from pytz import UTC
 
-from lms.lib.xblock.runtime import SettingsService
 from importlib import import_module
 from xmodule.errortracker import null_error_tracker, exc_info_to_str
 from xmodule.mako_module import MakoDescriptorSystem
@@ -42,6 +41,7 @@ from xmodule.tabs import StaticTab, CourseTabList
 from xblock.core import XBlock
 from opaque_keys.edx.locations import SlashSeparatedCourseKey
 from xmodule.exceptions import HeartbeatFailure
+from xmodule.settings_service import SettingsService
 
 log = logging.getLogger(__name__)
 
@@ -539,6 +539,8 @@ class MongoModuleStore(ModuleStoreWriteBase):
         if apply_cached_metadata:
             cached_metadata = self._get_cached_metadata_inheritance_tree(course_key)
 
+        # TODO: This needs to be moved out of the common lib, but without it some of the
+        # XBlock instantiations don't get the settings service included - why?
         services = {
             'settings': SettingsService(),
         }
@@ -814,6 +816,8 @@ class MongoModuleStore(ModuleStoreWriteBase):
             definition_data = {}
 
         if system is None:
+            # TODO: This needs to be moved out of the common lib, but without it some of the
+            # XBlock instantiations don't get the settings service included - why?
             services = {
                 'settings': SettingsService(),
             }
