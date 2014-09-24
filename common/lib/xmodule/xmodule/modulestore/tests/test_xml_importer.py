@@ -50,7 +50,7 @@ class ModuleStoreNoSettings(unittest.TestCase):
         """
         cleanup
         """
-        if modulestore:
+        if self.modulestore:
             connection = self.modulestore.database.connection
             connection.drop_database(self.modulestore.database)
             connection.close()
