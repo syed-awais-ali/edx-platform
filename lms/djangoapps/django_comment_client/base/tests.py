@@ -736,6 +736,7 @@ class CreateCommentUnicodeTestCase(ModuleStoreTestCase, UnicodeTestMixin, MockRe
     def _test_unicode_data(self, text, mock_request):
         self._set_mock_request_data(mock_request, {
             "closed": False,
+            "commentable_id": "dummy_commentable_id",
         })
         request = RequestFactory().post("dummy_url", {"body": text})
         request.user = self.student
@@ -784,6 +785,7 @@ class CreateSubCommentUnicodeTestCase(ModuleStoreTestCase, UnicodeTestMixin, Moc
         self._set_mock_request_data(mock_request, {
             "closed": False,
             "depth": 1,
+            "commentable_id": "dummy_commentable_id",
         })
         request = RequestFactory().post("dummy_url", {"body": text})
         request.user = self.student
