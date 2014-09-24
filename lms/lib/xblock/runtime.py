@@ -11,6 +11,7 @@ from user_api import user_service
 from xmodule.modulestore.django import modulestore
 from xmodule.x_module import ModuleSystem
 from xmodule.partitions.partitions_service import PartitionService
+from xmodule.settings_service import SettingsService
 
 
 def _quote_slashes(match):
@@ -209,14 +210,6 @@ class UserTagsService(object):
 
         return user_service.set_course_tag(self._get_current_user(),
                                            self.runtime.course_id, key, value)
-
-
-class SettingsService(object):
-    """
-    Allow to access the server settings
-    """
-    def get(self, setting_name):
-        return getattr(settings, setting_name)
 
 
 class LmsModuleSystem(LmsHandlerUrls, LmsCourse, LmsUser, ModuleSystem):  # pylint: disable=abstract-method
