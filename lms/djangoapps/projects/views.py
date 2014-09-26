@@ -3,7 +3,7 @@
 
 """ WORKGROUPS API VIEWS """
 from django.contrib.auth.models import Group, User
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
 from rest_framework import viewsets
 from rest_framework.decorators import action, link
@@ -152,7 +152,6 @@ class WorkgroupsViewSet(viewsets.ModelViewSet):
             workgroup = self.get_object()
             workgroup.groups.add(group)
             workgroup.save()
-            print workgroup.groups.all()
             return Response({}, status=status.HTTP_201_CREATED)
 
     @action(methods=['get', 'post', 'delete'])
@@ -178,19 +177,17 @@ class WorkgroupsViewSet(viewsets.ModelViewSet):
 
             workgroup = self.get_object()
 
-            # Ensure the user is not already assigned to a workgroup for this project
-            existing_workgroups = Workgroup.objects.filter(users=user).filter(project=workgroup.project)
-            if len(existing_workgroups):
-                message = 'User {} already assigned to a workgroup for this project'.format(user_id)
-                return Response({"detail": message}, status.HTTP_400_BAD_REQUEST)
-
             # Ensure the user is not already assigned to a project for this course
             existing_projects = Project.objects.filter(course_id=workgroup.project.course_id).filter(workgroups__users__id=user.id)
             if len(existing_projects):
                 message = 'User {} already assigned to a project for this course'.format(user_id)
                 return Response({"detail": message}, status.HTTP_400_BAD_REQUEST)
 
-            workgroup.users.add(user)
+            try:
+                workgroup.add_user(user)
+            except ValidationError as e:
+                return Response({"detail": unicode(e)}, status.HTTP_400_BAD_REQUEST)
+
             workgroup.save()
 
             # add user to the workgroup cohort, create it if it doesn't exist (for cases where there is a legacy
@@ -216,9 +213,9 @@ class WorkgroupsViewSet(viewsets.ModelViewSet):
             workgroup = self.get_object()
             course_descriptor, course_key, course_content = _get_course(self.request, user, workgroup.project.course_id)  # pylint: disable=W0612
             cohort = get_cohort_by_name(course_key,
-                                        workgroup.cohort_name, CourseUserGroup.WORKGROUP)
-            workgroup.users.remove(user)
-            remove_user_from_cohort(cohort, user.username, CourseUserGroup.WORKGROUP)
+                                        workgroup.cohort_name)
+            workgroup.remove_user(user)
+            remove_user_from_cohort(cohort, user.username)
             return Response({}, status=status.HTTP_204_NO_CONTENT)
 
     @link()
