@@ -36,7 +36,7 @@ from util.password_policy_validators import (
 )
 
 from api_manager.courses.serializers import CourseModuleCompletionSerializer
-from api_manager.courseware_access import get_course, get_course_child, get_course_key, course_exists, calculate_proforma_grade
+from api_manager.courseware_access import get_course, get_course_child, get_course_key, course_exists
 from api_manager.permissions import SecureAPIView, SecureListAPIView, IdsInFilterBackend, HasOrgsFilterBackend
 from api_manager.models import GroupProfile, APIUser as User
 from api_manager.organizations.serializers import OrganizationSerializer
@@ -934,7 +934,7 @@ class UsersCoursesGradesDetail(SecureAPIView):
         )
         if len(queryset):
             current_grade = queryset[0].grade
-            proforma_grade = calculate_proforma_grade(grade_summary, grading_policy)
+            proforma_grade = grades.calculate_proforma_grade(grade_summary, grading_policy)
 
         response_data = {
             'courseware_summary': progress_summary,
