@@ -24,7 +24,6 @@ from xmodule.modulestore import Location, InvalidLocationError
 from xmodule.modulestore.django import modulestore
 from course_groups.cohorts import (add_cohort, add_user_to_cohort, get_cohort_by_name,
                                    remove_user_from_cohort)
-from course_groups.models import CourseUserGroup
 from xmodule.modulestore import Location
 
 from .models import Project, Workgroup, WorkgroupSubmission
@@ -125,7 +124,7 @@ class WorkgroupsViewSet(viewsets.ModelViewSet):
             # create the workgroup cohort
             workgroup = self.object
             course_descriptor, course_key, course_content = _get_course(self.request, self.request.user, workgroup.project.course_id)  # pylint: disable=W0612
-            add_cohort(course_key, workgroup.cohort_name, CourseUserGroup.WORKGROUP)
+            add_cohort(course_key, workgroup.cohort_name)
 
         return response
 
@@ -194,12 +193,12 @@ class WorkgroupsViewSet(viewsets.ModelViewSet):
             # workgroup)
             course_descriptor, course_key, course_content = _get_course(self.request, user, workgroup.project.course_id)  # pylint: disable=W0612
             try:
-                cohort = get_cohort_by_name(course_key, workgroup.cohort_name, CourseUserGroup.WORKGROUP)
+                cohort = get_cohort_by_name(course_key, workgroup.cohort_name)
                 add_user_to_cohort(cohort, user.username)
             except ObjectDoesNotExist:
                 # This use case handles cases where a workgroup might have been created before
                 # the notion of a cohorted discussion. So we need to backfill in the data
-                cohort = add_cohort(course_key, workgroup.cohort_name, CourseUserGroup.WORKGROUP)
+                cohort = add_cohort(course_key, workgroup.cohort_name)
                 for workgroup_user in workgroup.users.all():
                     add_user_to_cohort(cohort, workgroup_user.username)
             return Response({}, status=status.HTTP_201_CREATED)

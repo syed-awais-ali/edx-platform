@@ -31,8 +31,6 @@ class CourseUserGroup(models.Model):
 
     # For now, only have group type 'cohort', but adding a type field to support
     # things like 'question_discussion', 'friends', 'off-line-class', etc
-    ANY = 'any'
     COHORT = 'cohort'
-    WORKGROUP = 'workgroup'
-    GROUP_TYPE_CHOICES = ((COHORT, 'Cohort'), (WORKGROUP, 'Workgroup'))
+    GROUP_TYPE_CHOICES = ((COHORT, 'Cohort'),)
     group_type = models.CharField(max_length=20, choices=GROUP_TYPE_CHOICES)
