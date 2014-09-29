@@ -12,7 +12,6 @@ import newrelic.agent
 
 from edxmako.shortcuts import render_to_response
 from courseware.courses import get_course_with_access
-from course_groups.cohorts import CourseUserGroup
 from course_groups.cohorts import (is_course_cohorted, get_cohort, get_cohort_id,
                                    get_cohorted_threads_privacy,
                                    is_commentable_cohorted, get_cohorted_commentables,
@@ -76,10 +75,9 @@ def get_threads(request, course_id, discussion_id=None, per_page=THREADS_PER_PAG
 
     if not group_id:
         if not cached_has_permission(request.user, "see_all_cohorts", course_id):
-            user_cohorts = get_cohort(request.user, course_id,
-                                      group_type=CourseUserGroup.ANY, allow_multiple=True)
-            user_cohort_ids = [str(cohort.id) for cohort in user_cohorts]
-            group_ids = user_cohort_ids
+            user_group_id = get_cohort_id(request.user, course_id)
+            if user_group_id:
+                group_ids.append(str(user_group_id))
             if not group_ids and get_cohorted_threads_privacy(course_id) == 'cohort-only':
                 default_query_params['exclude_groups'] = True
     else:
@@ -152,15 +150,14 @@ def inline_discussion(request, course_id, discussion_id):
 
         if is_moderator:
             cohorts_list.append({'name': _('All Groups'), 'id': None})
-            cohorts = get_course_cohorts(course_id, group_type=CourseUserGroup.ANY)
+            cohorts = get_course_cohorts(course_id)
             for cohort in cohorts:
                 cohorts_list.append({'name': cohort.name, 'id': cohort.id})
 
         else:
-            #students can only select in their own cohorts
-            cohorts = get_cohort(request.user, course_id,
-                                 group_type=CourseUserGroup.ANY, allow_multiple=True)
-            for cohort in cohorts:
+            # students can only select in their cohort
+            cohort = get_cohort(request.user, course_id)
+            if cohort:
                 cohorts_list.append({'name': cohort.name, 'id': cohort.id})
 
     return utils.JsonResponse({
@@ -218,10 +215,7 @@ def forum_form_discussion(request, course_id):
         with newrelic.agent.FunctionTrace(nr_transaction, "get_cohort_info"):
             cohorts = get_course_cohorts(course_id)
             cohorted_commentables = get_cohorted_commentables(course_id)
-
-            user_cohorts = get_cohort(request.user, course_id,
-                                      group_type=CourseUserGroup.ANY, allow_multiple=True)
-            user_cohort_ids = [cohort.id for cohort in user_cohorts]
+            user_cohort_id = get_cohort_id(request.user, course_id)
 
         context = {
             'csrf': csrf(request)['csrf_token'],
@@ -238,7 +232,7 @@ def forum_form_discussion(request, course_id):
             'roles': saxutils.escape(json.dumps(utils.get_role_ids(course_id)), escapedict),
             'is_moderator': cached_has_permission(request.user, "see_all_cohorts", course_id),
             'cohorts': cohorts,
-            'user_cohorts': user_cohort_ids,
+            'user_cohorts': [user_cohort_id] if user_cohort_id else [],
             'cohorted_commentables': cohorted_commentables,
             'is_course_cohorted': is_course_cohorted(course_id),
             'sort_preference': user.default_sort_key,
@@ -311,9 +305,7 @@ def single_thread(request, course_id, discussion_id, thread_id):
         with newrelic.agent.FunctionTrace(nr_transaction, "get_cohort_info"):
             cohorts = get_course_cohorts(course_id)
             cohorted_commentables = get_cohorted_commentables(course_id)
-            user_cohorts = get_cohort(request.user, course_id,
-                                      group_type=CourseUserGroup.ANY, allow_multiple=True)
-            user_cohort_ids = [cohort.id for cohort in user_cohorts]
+            user_cohort_id = get_cohort_id(request.user, course_id)
 
         context = {
             'discussion_id': discussion_id,
@@ -333,7 +325,7 @@ def single_thread(request, course_id, discussion_id, thread_id):
             'is_moderator': cached_has_permission(request.user, "see_all_cohorts", course_id),
             'flag_moderator': cached_has_permission(request.user, 'openclose_thread', course.id) or has_access(request.user, 'staff', course),
             'cohorts': cohorts,
-            'user_cohorts': user_cohort_ids,
+            'user_cohorts': [user_cohort_id] if user_cohort_id else [],
             'cohorted_commentables': cohorted_commentables,
             'sort_preference': cc_user.default_sort_key,
             'has_permission_to_create_thread': cached_has_permission(request.user, "create_thread", course_id),
