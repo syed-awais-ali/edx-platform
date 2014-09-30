@@ -3,6 +3,7 @@
 """ ORGANIZATIONS API VIEWS """
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import F
 
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -11,6 +12,7 @@ from rest_framework.response import Response
 from api_manager.models import Organization
 from api_manager.users.serializers import UserSerializer
 from api_manager.utils import str2bool
+from gradebook.models import StudentGradebook
 from student.models import CourseEnrollment
 
 from .serializers import OrganizationSerializer
@@ -23,19 +25,33 @@ class OrganizationsViewSet(viewsets.ModelViewSet):
     serializer_class = OrganizationSerializer
     model = Organization
 
+    @action(methods=['get',])
+    def metrics(self, request, pk):
+        """
+        Provide statistical information for the specified Organization
+        """
+        response_data = {}
+        grade_complete_match_range = 0.01
+        users_grade_complete_count = StudentGradebook.objects\
+            .filter(user__organizations=pk)\
+            .filter(proforma_grade__lte=F('grade') + grade_complete_match_range).count()
+        response_data['users_grade_complete_count'] = users_grade_complete_count
+        return Response(response_data, status=status.HTTP_200_OK)
+
     @action(methods=['get', 'post'])
     def users(self, request, pk):
         """
         Add a User to an Organization
         """
         if request.method == 'GET':
-            include_course_counts = request.QUERY_PARAMS.get('include_course_counts', None)
             users = User.objects.filter(organizations=pk)
             response_data = []
             if users:
+
                 for user in users:
                     serializer = UserSerializer(user)
                     user_data = serializer.data
+                    include_course_counts = request.QUERY_PARAMS.get('include_course_counts', None)
                     if str2bool(include_course_counts):
                         enrollments = CourseEnrollment.enrollments_for_user(user).count()
                         user_data['course_count'] = enrollments

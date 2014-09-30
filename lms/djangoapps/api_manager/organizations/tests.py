@@ -13,6 +13,7 @@ from django.core.cache import cache
 from django.test import TestCase, Client
 from django.test.utils import override_settings
 
+from gradebook.models import StudentGradebook
 from student.models import UserProfile
 from student.tests.factories import CourseEnrollmentFactory
 from xmodule.modulestore.tests.factories import CourseFactory
@@ -297,3 +298,44 @@ class OrganizationsApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data[0]['id'], self.test_user.id)
         self.assertEqual(response.data[0]['course_count'], 2)
+
+
+    def test_organizations_metrics_get(self):
+        users = []
+        for i in xrange(1, 6):
+            data = {
+                'email': 'test{}@example.com'.format(i),
+                'username': 'test_user{}'.format(i),
+                'password': 'test_pass',
+                'first_name': 'John{}'.format(i),
+                'last_name': 'Doe{}'.format(i),
+                'city': 'Boston',
+            }
+            response = self.do_post(self.base_users_uri, data)
+            self.assertEqual(response.status_code, 201)
+            user_id = response.data['id']
+            user = User.objects.get(pk=user_id)
+            users.append(user_id)
+            if i < 2:
+                StudentGradebook.objects.create(user=user, grade=0.75, proforma_grade=0.85)
+            elif i < 4:
+                StudentGradebook.objects.create(user=user, grade=0.82, proforma_grade=0.82)
+            else:
+                StudentGradebook.objects.create(user=user, grade=0.90, proforma_grade=0.91)
+
+        data = {
+            'name': self.test_organization_name,
+            'display_name': self.test_organization_display_name,
+            'contact_name': self.test_organization_contact_name,
+            'contact_email': self.test_organization_contact_email,
+            'contact_phone': self.test_organization_contact_phone,
+            'logo_url': self.test_organization_logo_url,
+            'users': users
+        }
+        response = self.do_post(self.base_organizations_uri, data)
+        test_uri = '{}{}/'.format(self.base_organizations_uri, str(response.data['id']))
+        users_uri = '{}users/'.format(test_uri)
+        metrics_uri = '{}metrics/'.format(test_uri)
+        response = self.do_get(metrics_uri)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['users_grade_complete_count'], 4)
