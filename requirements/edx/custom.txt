@@ -7,4 +7,4 @@
 -e git+https://github.com/edx-solutions/xblock-ooyala.git@10ededa58aab3f8893d98de36e2e5279890064bd#egg=xblock-ooyala
 -e git+https://github.com/edx-solutions/xblock-group-project.git@3c96d3e9bc287048709659ae0dbf4b0923927839#egg=xblock-group-project
 -e git+https://github.com/edx-solutions/xblock-discussion.git@7e61b4b14a7477b899280075f47c032878ddebc5#egg=xblock-discussion
--e git+https://github.com/edx-solutions/xblock-adventure.git@7b48d236d03b2d522a670da08f9d7ef12c3c2321#egg=xblock-adventure
+-e git+https://github.com/edx-solutions/xblock-adventure.git@30894de41ee7efe7d5b6400086463d12995893f7#egg=xblock-adventure
