@@ -1707,7 +1707,8 @@ class CoursesApiTests(TestCase):
         self.assertEqual(len(response.data['leaders']), 0)
 
     def test_courses_completions_leaders_list_get(self):
-        completion_uri = '{}/{}/completions/'.format(self.base_courses_uri, unicode(self.course.id))
+        completion_uri = '{}/{}/completions/'.format(self.base_courses_uri, self.test_course_id)
+        leaders_uri = '{}/{}/metrics/completions/leaders/'.format(self.base_courses_uri, self.test_course_id)
         # Make last user as observer to make sure that data is being filtered out
         allow_access(self.course, self.users[USER_COUNT-1], 'observer')
 
@@ -1739,25 +1740,22 @@ class CoursesApiTests(TestCase):
             })
             self.assertEqual(response.status_code, 201)
 
-        test_uri = '{}/{}/metrics/completions/leaders/?{}'.format(self.base_courses_uri, self.test_course_id, 'count=6')
+        test_uri = '{}?count=6'.format(leaders_uri)
         response = self.do_get(test_uri)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data['leaders']), 4)
         self.assertEqual(response.data['course_avg'], 20)
 
         # without count filter and user_id
-        test_uri = '{}/{}/metrics/completions/leaders/?user_id={}'.format(self.base_courses_uri, self.test_course_id,
-                                                                          self.users[1].id)
+        test_uri = '{}?user_id={}'.format(leaders_uri, self.users[1].id)
         response = self.do_get(test_uri)
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['leaders']), 3)
+        self.assertEqual(len(response.data['leaders']), 4)
         self.assertEqual(response.data['position'], 2)
         self.assertEqual(response.data['completions'], 28)
 
         # with skipleaders filter
-        test_uri = '{}/{}/metrics/completions/leaders/?user_id={}&skipleaders=true'.format(self.base_courses_uri,
-                                                                                           self.test_course_id,
-                                                                                           self.users[1].id)
+        test_uri = '{}?user_id={}&skipleaders=true'.format(leaders_uri, self.users[1].id)
         response = self.do_get(test_uri)
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(response.data.get('leaders', None))
@@ -1768,6 +1766,22 @@ class CoursesApiTests(TestCase):
         test_uri = '{}/{}/metrics/completions/leaders/'.format(self.base_courses_uri, self.test_bogus_course_id)
         response = self.do_get(test_uri)
         self.assertEqual(response.status_code, 404)
+
+        #filter course module completion by organization
+        data = {
+            'name': 'Test Organization',
+            'display_name': 'Test Org Display Name',
+            'users': [self.users[1].id]
+        }
+        response = self.do_post(self.base_organizations_uri, data)
+        self.assertEqual(response.status_code, 201)
+        test_uri = '{}?organizations={}'.format(leaders_uri, response.data['id'])
+        response = self.do_get(test_uri)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data['leaders']), 1)
+        self.assertEqual(response.data['leaders'][0]['id'], 2)
+        self.assertEqual(response.data['leaders'][0]['completions'], 28)
+        self.assertEqual(response.data['course_avg'], 6)
 
     def test_courses_metrics_grades_list_get(self):
         # Retrieve the list of grades for this course

@@ -1601,7 +1601,7 @@ class CoursesMetricsCompletionsLeadersList(SecureAPIView):
         GET /api/courses/{course_id}/metrics/completions/leaders/
         """
         user_id = self.request.QUERY_PARAMS.get('user_id', None)
-        count = self.request.QUERY_PARAMS.get('count', 3)
+        count = self.request.QUERY_PARAMS.get('count', None)
         skipleaders = str2bool(self.request.QUERY_PARAMS.get('skipleaders', 'false'))
         data = {}
         course_avg = 0
@@ -1616,6 +1616,13 @@ class CoursesMetricsCompletionsLeadersList(SecureAPIView):
 
         queryset = CourseModuleCompletion.objects.filter(course_id=course_key)\
             .exclude(user__in=exclude_users).exclude(cat_list)
+
+        orgs_filter = self.request.QUERY_PARAMS.get('organizations', None)
+        if orgs_filter:
+            upper_bound = getattr(settings, 'API_LOOKUP_UPPER_BOUND', 100)
+            orgs_filter = orgs_filter.split(",")[:upper_bound]
+            queryset = queryset.filter(user__organizations__in=orgs_filter)
+
         total_actual_completions = queryset.filter(user__is_active=True).count()
         if user_id:
             user_queryset = CourseModuleCompletion.objects.filter(course_id=course_key, user__id=user_id)\
@@ -1639,7 +1646,10 @@ class CoursesMetricsCompletionsLeadersList(SecureAPIView):
             course_avg = round(total_actual_completions / float(total_users), 1)
             course_avg = int(round(100 * course_avg / total_possible_completions))  # avg in percentage
         data['course_avg'] = course_avg
+
         if not skipleaders:
+            if count is None:
+                count = total_users
             queryset = queryset.filter(user__is_active=True).values('user__id', 'user__username',
                                                                     'user__profile__title',
                                                                     'user__profile__avatar_url')\
