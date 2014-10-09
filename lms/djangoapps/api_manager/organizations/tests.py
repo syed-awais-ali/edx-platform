@@ -339,6 +339,7 @@ class OrganizationsApiTests(TestCase):
         metrics_uri = '{}metrics/'.format(test_uri)
         response = self.do_get(metrics_uri)
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['users_grade_average'], 0.838)
         self.assertEqual(response.data['users_grade_complete_count'], 4)
 
 
