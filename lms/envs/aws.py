@@ -308,6 +308,8 @@ if 'XBLOCK_FS_STORAGE_BUCKET' in ENV_TOKENS:
         'aws_access_key_id' : AUTH_TOKENS.get('AWS_ACCESS_KEY_ID', None),
         'aws_secret_access_key' : AUTH_TOKENS.get('AWS_SECRET_ACCESS_KEY', None)
     }
+#DJFS = AUTH_TOKENS.get('DJFS', None)
+if 'DJFS' in AUTH_TOKENS: DJFS = AUTH_TOKENS['DJFS']
 
 ############### Module Store Items ##########
 HOSTNAME_MODULESTORE_DEFAULT_MAPPINGS = ENV_TOKENS.get('HOSTNAME_MODULESTORE_DEFAULT_MAPPINGS', {})
