@@ -155,8 +155,6 @@ class PaginationTestCase(AssetsTestCase):
                     self.assertIn(extension, requested_file_types)
 
 
-
-
 class UploadTestCase(AssetsTestCase):
     """
     Unit tests for uploading a file
