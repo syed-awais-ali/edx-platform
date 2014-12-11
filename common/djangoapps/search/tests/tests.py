@@ -7,6 +7,7 @@ from search.manager import SearchEngine
 from search.elastic import ElasticSearchEngine
 
 from .mock_search_engine import MockSearchEngine
+from search.views import SearchResultProcessor
 
 TEST_INDEX_NAME = "test_index"
 
@@ -214,3 +215,166 @@ class ElasticSearchTests(TestCase):
 
         response = self._searcher.search(tag_dictionary={"shape": "square", "color": "blue"})
         self.assertEqual(response["total"], 0)
+
+class SearchResultProcessorTests(TestCase):
+
+    def test_strings_in_dictionary(self):
+        test_dict = {
+            "a": "This is a string that should show up"
+        }
+
+        get_strings = SearchResultProcessor.strings_in_dictionary(test_dict)
+        self.assertEqual(len(get_strings), 1)
+        self.assertEqual(get_strings[0], test_dict["a"])
+
+        test_dict.update({
+            "b": "This is another string that should show up"
+        })
+        get_strings = SearchResultProcessor.strings_in_dictionary(test_dict)
+        self.assertEqual(len(get_strings), 2)
+        self.assertEqual(get_strings[0], test_dict["a"])
+        self.assertEqual(get_strings[1], test_dict["b"])
+
+        test_dict.update({
+            "CASCADE": {
+                "z": "This one should be found too"
+            }
+        })
+        get_strings = SearchResultProcessor.strings_in_dictionary(test_dict)
+        self.assertEqual(len(get_strings), 3)
+        self.assertEqual(get_strings[0], test_dict["a"])
+        self.assertEqual(get_strings[1], test_dict["b"])
+        self.assertEqual(get_strings[2], test_dict["CASCADE"]["z"])
+
+        test_dict.update({
+            "DEEP": {
+                "DEEPER": {
+                    "STILL_GOING": {
+                        "MORE": {
+                            "here": "And here, again and again"
+                        }
+                    }
+                }
+            }
+        })
+        get_strings = SearchResultProcessor.strings_in_dictionary(test_dict)
+        self.assertEqual(len(get_strings), 4)
+        self.assertEqual(get_strings[0], test_dict["a"])
+        self.assertEqual(get_strings[1], test_dict["b"])
+        self.assertEqual(get_strings[2], test_dict["CASCADE"]["z"])
+        self.assertEqual(get_strings[3], test_dict["DEEP"]["DEEPER"]["STILL_GOING"]["MORE"]["here"])
+
+        test_dict = {
+            "id": "excluded",
+            "content_type": "excluded",
+            "xblock_keywords": "excluded",
+            "name": "not excluded",
+            "url": "excluded",
+        }
+
+        excluded_fields = ["id", "content_type", "xblock_keywords", "url"]
+        get_strings = SearchResultProcessor.strings_in_dictionary(test_dict, excluded_fields)
+        self.assertEqual(len(get_strings), 1)
+
+
+    def test_find_matches(self):
+        words = ["hello"]
+        strings = [
+            "hello there",
+            "goodbye",
+            "Sail away to say HELLO",
+        ]
+        matches = SearchResultProcessor.find_matches(strings, words, 100)
+        self.assertEqual(len(matches), 2)
+        self.assertEqual(matches[0], strings[0])
+        self.assertEqual(matches[1], strings[2])
+
+        words = ["hello", "there"]
+        strings = [
+            "hello there",
+            "goodbye",
+            "Sail away to say HELLO",
+        ]
+        matches = SearchResultProcessor.find_matches(strings, words, 100)
+        self.assertEqual(len(matches), 2)
+        self.assertEqual(matches[0], strings[0])
+        self.assertEqual(matches[1], strings[2])
+
+        words = ["hello", "there"]
+        strings = [
+            "hello there",
+            "goodbye there",
+            "Sail away to say HELLO",
+        ]
+        matches = SearchResultProcessor.find_matches(strings, words, 100)
+        self.assertEqual(len(matches), 3)
+        self.assertEqual(matches[0], strings[0])
+        self.assertEqual(matches[1], strings[2])
+        self.assertEqual(matches[2], strings[1])
+
+        words = ["goodbye there", "goodbye", "there"]
+        strings = [
+            "goodbye",
+            "goodbye there",
+            "Sail away to say GOODBYE",
+        ]
+        matches = SearchResultProcessor.find_matches(strings, words, 100)
+        self.assertEqual(len(matches), 3)
+        self.assertEqual(matches[0], strings[1])
+        self.assertEqual(matches[1], strings[0])
+        self.assertEqual(matches[2], strings[2])
+
+    def test_too_long_find_matches(self):
+        words = ["edx", "afterward"]
+        strings = [
+            "Here is a note about edx and it is very long - more than the desirable length of 100 characters - indeed this should show up",
+            "This matches too but comes afterward",
+        ]
+        matches = SearchResultProcessor.find_matches(strings, words, 100)
+        self.assertEqual(len(matches), 1)
+
+    def test_url(self):
+        test_result = {
+            "course": "testmetestme",
+            "id": "herestheid"
+        }
+        srp = SearchResultProcessor(test_result)
+        self.assertEqual(srp.url, "/courses/testmetestme/jump_to/herestheid")
+
+        srp = SearchResultProcessor({"course": "testmetestme"})
+        self.assertEqual(srp.url, None)
+
+        srp = SearchResultProcessor({"id": "herestheid"})
+        self.assertEqual(srp.url, None)
+
+        srp = SearchResultProcessor({"something_else": "altogether"})
+        self.assertEqual(srp.url, None)
+
+    def test_excerpt(self):
+        test_result = {
+            "notes": "Here is a note about edx",
+            "name": "edX search a lot",
+        }
+        srp = SearchResultProcessor(test_result)
+        edx_excerpt = srp.excerpt("note")
+        self.assertEqual(edx_excerpt, "Here is a <b>note</b> about edx")
+
+        edx_excerpt = srp.excerpt("edx")
+        self.assertEqual(edx_excerpt, "Here is a note about <b>edx</b>...<b>edX</b> search a lot")
+
+    def test_too_long_excerpt(self):
+        test_result = {
+            "notes": "Here is a note about edx and it is very long - more than the desirable length of 100 characters - indeed this should show up but it should trim the characters around in order to show the selected text in bold",
+        }
+        srp = SearchResultProcessor(test_result)
+        edx_excerpt = srp.excerpt("edx")
+        self.assertNotEqual(edx_excerpt, "Here is a note about <b>edx</b> and it is very long - more than the desirable length of 100 characters - indeed this should show up but it should trim the characters around in order to show the selected text in bold")
+        self.assertTrue("note about <b>edx</b> and it is" in edx_excerpt)
+
+        test_result = {
+            "notes": "Here is a note about stuff and it is very long - more than the desirable length of 100 characters - indeed this should show up but it should trim the edx characters around in order to show the selected text in bold",
+        }
+        srp = SearchResultProcessor(test_result)
+        edx_excerpt = srp.excerpt("edx")
+        self.assertNotEqual(edx_excerpt, "Here is a note about stuff and it is very long - more than the desirable length of 100 characters - indeed this should show up but it should trim the edx characters around in order to show the selected text in bold")
+        self.assertTrue("should trim the <b>edx</b> characters around" in edx_excerpt)
