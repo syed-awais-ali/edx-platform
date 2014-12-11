@@ -53,7 +53,8 @@ class StudentProgress(TimeStampedModel):
         """
         queryset = cls.objects.filter(course_id__exact=course_key, user__is_active=True,
                                       user__courseenrollment__is_active=True,
-                                      user__courseenrollment__course_id__exact=course_key)\
+                                      user__courseenrollment__course_id__exact=course_key,
+                                      completions__gt=0)\
             .exclude(user__id__in=exclude_users)
         if org_ids:
             queryset = queryset.filter(user__organizations__in=org_ids)

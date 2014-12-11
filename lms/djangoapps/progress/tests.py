@@ -24,7 +24,6 @@ from student.tests.factories import UserFactory, AdminFactory
 from courseware.tests.factories import StaffFactory
 from xmodule.modulestore.tests.factories import CourseFactory, ItemFactory
 from progress.models import CourseModuleCompletion, StudentProgress, StudentProgressHistory
-from courseware.model_data import FieldDataCache
 from courseware import module_render
 from util.signals import course_deleted
 
