@@ -54,6 +54,9 @@ from xmodule.x_module import XModuleDescriptor
 from util.json_request import JsonResponse
 from util.sandboxing import can_execute_unsafe_code, get_python_lib_zip
 
+if settings.FEATURES.get('MILESTONES_APP', False):
+    from milestones import api as milestones_api
+
 
 log = logging.getLogger(__name__)
 
@@ -93,6 +96,27 @@ def make_track_function(request):
     return function
 
 
+def _get_required_content(course, user):
+    """
+    Queries milestones subsystem to see if the specified course is gated on one or more milestones,
+    and if those milestones can be fulfilled via completion of a particular course content module
+    """
+    required_content = []
+    if settings.FEATURES.get('MILESTONES_APP', False):
+        # Get all of the outstanding milestones for this course, for this user
+        milestone_paths = milestones_api.get_course_milestones_fulfillment_paths(
+            unicode(course.id),
+            user.__dict__
+        )
+        # For each outstanding milestone, see if this content is one of its fulfillment paths
+        for path_key in milestone_paths:
+            milestone_path = milestone_paths[path_key]
+            if milestone_path.get('content') and len(milestone_path['content']):
+                for content in milestone_path['content']:
+                    required_content.append(content['content_id'])
+    return required_content
+
+
 def toc_for_course(request, course, active_chapter, active_section, field_data_cache):
     '''
     Create a table of contents from the module store
@@ -122,9 +146,20 @@ def toc_for_course(request, course, active_chapter, active_section, field_data_c
         if course_module is None:
             return None
 
+        # Check to see if the course is gated on required content (such as an Entrance Exam)
+        required_content = _get_required_content(course, request.user)
+
         chapters = list()
         for chapter in course_module.get_display_items():
-            if chapter.hide_from_toc:
+            # Only show required content, if there is required content
+            # chapter.hide_from_toc is read-only (boo)
+            local_hide_from_toc = False
+            if len(required_content):
+                if unicode(chapter.location) not in required_content:
+                    local_hide_from_toc = True
+
+            # Skip the current chapter if a hide flag is tripped
+            if chapter.hide_from_toc or local_hide_from_toc:
                 continue
 
             sections = list()
@@ -141,7 +176,6 @@ def toc_for_course(request, course, active_chapter, active_section, field_data_c
                                      'active': active,
                                      'graded': section.graded,
                                      })
-
             chapters.append({'display_name': chapter.display_name_with_default,
                              'url_name': chapter.url_name,
                              'sections': sections,
@@ -345,6 +379,21 @@ def get_module_system_for_user(user, field_data_cache,
             request_token=request_token,
         )
 
+    def _fulfill_content_milestones(course_key, content_key, user_id):
+        """
+        Internal helper to handle milestone fulfillments for the specified content module
+        """
+        if settings.FEATURES.get('MILESTONES_APP', False):
+            content_milestones = milestones_api.get_course_content_milestones(
+                course_key,
+                content_key,
+                relationship='fulfills'
+            )
+            # Add each milestone to the user's set...
+            user = {'id': user_id}
+            for milestone in content_milestones:
+                milestones_api.add_user_milestone(user, milestone)
+
     def handle_grade_event(block, event_type, event):
         user_id = event.get('user_id', user.id)
 
@@ -376,6 +425,13 @@ def get_module_system_for_user(user, field_data_cache,
             tags.append('type:%s' % grade_bucket_type)
 
         dog_stats_api.increment("lms.courseware.question_answered", tags=tags)
+
+        # Fulfill any milestones for this content module
+        _fulfill_content_milestones(
+            unicode(course_id),
+            unicode(descriptor.location),
+            user_id
+        )
 
     def publish(block, event_type, event):
         """A function that allows XModules to publish events."""
