@@ -365,6 +365,10 @@
                     'js/student_account/enrollment',
                     'js/student_account/shoppingcart',
                 ]
+            },
+            'js/search/views/form': {
+                exports: 'edx.search.Form',
+                deps: ['jquery', 'underscore', 'backbone']
             }
         }
     });
@@ -384,7 +388,8 @@
         'lms/include/js/spec/student_account/password_reset_spec.js',
         'lms/include/js/spec/student_account/enrollment_spec.js',
         'lms/include/js/spec/student_account/shoppingcart_spec.js',
-        'lms/include/js/spec/student_profile/profile_spec.js'
+        'lms/include/js/spec/student_profile/profile_spec.js',
+        'lms/include/js/spec/search/search_spec.js'
     ]);
 
 }).call(this, requirejs, define);
