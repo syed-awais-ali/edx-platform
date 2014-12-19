@@ -43,7 +43,7 @@ var edx = edx || {};
                 type: 'POST',
                 success: function (self) {
                     self.page += 1;
-                    self.trigger('next')
+                    self.trigger('next');
                 },
                 error: function (self) {
                     self.trigger('error');

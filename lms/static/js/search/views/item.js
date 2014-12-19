@@ -1,7 +1,7 @@
 var edx = edx || {};
 
 (function ($, _, Backbone, gettext) {
-   'use strict'
+   'use strict';
 
     edx.search = edx.search || {};
 
