@@ -34,7 +34,7 @@ var edx = edx || {};
         },
 
         renderNext: function () {
-            var listHtml = this.renderItems();
+            this.renderItems();
             if (! this.collection.hasNextPage()) {
                 this.$el.find('.search-load-next').remove();
             }
