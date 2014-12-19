@@ -12,10 +12,10 @@ var edx = edx || {};
             'click .search-load-next': 'loadNext'
         },
 
-        listTemplate: _.template($('#search_list-tpl').html()),
-        loadingTemplate: _.template($('#search_loading-tpl').html()),
 
         initialize: function () {
+            this.listTemplate = _.template($('#search_list-tpl').html());
+            this.loadingTemplate = _.template($('#search_loading-tpl').html());
             this.collection.on('search', this.render, this);
             this.collection.on('next', this.renderNext, this);
             // this.collection.on('error', ???, this);

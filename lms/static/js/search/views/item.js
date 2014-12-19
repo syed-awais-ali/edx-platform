@@ -12,7 +12,10 @@ var edx = edx || {};
             'role': 'region',
             'aria-label': 'search result'
         },
-        tpl: _.template($('#search_item-tpl').html()),
+
+        initialize: function () {
+            this.tpl = _.template($('#search_item-tpl').html());
+        },
 
         render: function () {
             this.$el.html(this.tpl(this.model.attributes));
