@@ -24,7 +24,8 @@ var edx = edx || {};
 
         formatLocation: function (location) {
             var locationString = '';
-            _.each(_.keys(location).sort(), function(key, i, list) {
+            var keys = _.keys(location).sort();
+            _.each(keys, function(key, i, list) {
                 locationString += location[key];
                 if (i + 1 < list.length) {
                     locationString += ' ▸ ';
