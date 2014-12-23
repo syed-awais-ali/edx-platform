@@ -81,6 +81,7 @@ fixture_paths:
     - templates/student_account
     - templates/student_profile
     - templates/file-upload.underscore
+    - templates/courseware_search
 
 requirejs:
   paths:
