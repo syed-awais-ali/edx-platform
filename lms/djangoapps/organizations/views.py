@@ -73,10 +73,24 @@ class OrganizationsViewSet(viewsets.ModelViewSet):
     @action(methods=['get', 'post'])
     def users(self, request, pk):
         """
-        Add a User to an Organization
+        - URI: ```/api/organizations/{org_id}/users/```
+        - GET: Returns users in an organization
+            * course_id parameter should filter user by course
+            * include_course_counts parameter should be `true` to get user's enrollment count
+            * include_grades parameter should be `true` to get user's grades
+            * for the course given in the course_id parameter
+        - POST: Adds a User to an Organization
+
         """
         if request.method == 'GET':
             include_course_counts = request.QUERY_PARAMS.get('include_course_counts', None)
+            include_grades = request.QUERY_PARAMS.get('include_grades', None)
+            course_id = request.QUERY_PARAMS.get('course_id', None)
+            grade_complete_match_range = getattr(settings, 'GRADEBOOK_GRADE_COMPLETE_PROFORMA_MATCH_RANGE', 0.01)
+            course_key = None
+            if course_id:
+                course_key = get_course_key(course_id)
+
             users = User.objects.filter(organizations=pk)
 
             if course_key:
