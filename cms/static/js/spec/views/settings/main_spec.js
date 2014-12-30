@@ -19,7 +19,8 @@ define([
                 intro_video : null,
                 effort : null,
                 course_image_name : '',
-                course_image_asset_path : ''
+                course_image_asset_path : '',
+                is_entrance_exam : ''
             },
             mockSettingsPage = readFixtures('mock/mock-settings-page.underscore');
 
