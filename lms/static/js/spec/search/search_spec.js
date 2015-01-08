@@ -27,6 +27,24 @@ function($, Sinon, Backbone, TemplateHelpers) {
             expect(this.form.submitForm()).toEqual(false);
         });
 
+        it('trims input string', function () {
+            var term = '  search string  ';
+            $('.search-field').val(term);
+            $('form').trigger('submit');
+            expect(this.onSearch).toHaveBeenCalledWith($.trim(term));
+        });
+
+        it('handles calls to doSearch', function () {
+            var term = '  search string  ';
+            $('.search-field').val(term);
+            this.form.doSearch(term);
+            expect(this.onSearch).toHaveBeenCalledWith($.trim(term));
+            expect($('.search-field').val()).toEqual(term);
+            expect($('.search-field')).toHaveClass('is-active');
+            expect($('.search-button')).toBeHidden();
+            expect($('.cancel-button')).toBeVisible();
+        });
+
         it('triggers a search event and changes to active state', function () {
             var term = 'search string';
             $('.search-field').val(term);
@@ -128,6 +146,11 @@ function($, Sinon, Backbone, TemplateHelpers) {
             this.server.restore();
         });
 
+        it('appends course_id to url', function () {
+            var collection = new edx.search.Collection([], { course_id: 'edx101' });
+            expect(collection.url).toEqual('/search/edx101');
+        });
+
         it('sends a request and parses the json result', function () {
             this.collection.performSearch('search string');
             var response = {
@@ -141,7 +164,7 @@ function($, Sinon, Backbone, TemplateHelpers) {
                     }
                 }]
             };
-            this.server.respondWith('POST', '/search', [200, {}, JSON.stringify(response)]);
+            this.server.respondWith('POST', this.collection.url, [200, {}, JSON.stringify(response)]);
             this.server.respond();
             expect(this.onSearch).toHaveBeenCalled();
             expect(this.collection.totalCount).toEqual(1);
@@ -159,15 +182,32 @@ function($, Sinon, Backbone, TemplateHelpers) {
         it('loads next page', function () {
             var response = { total: 35, results: [] };
             this.collection.loadNextPage();
-            this.server.respond('POST', '/search', [200, {}, JSON.stringify(response)]);
+            this.server.respond('POST', this.collection.url, [200, {}, JSON.stringify(response)]);
             expect(this.onNext).toHaveBeenCalled();
             expect(this.onError).not.toHaveBeenCalled();
+        });
+
+        it('sends correct paging parameters', function () {
+            this.collection.performSearch('search string');
+            var response = { total: 52, results: [] };
+            this.server.respondWith('POST', this.collection.url, [200, {}, JSON.stringify(response)]);
+            this.server.respond();
+            this.collection.loadNextPage();
+            this.server.respond();
+            spyOn($, 'ajax');
+            this.collection.loadNextPage();
+            expect($.ajax.mostRecentCall.args[0].url).toEqual(this.collection.url);
+            expect($.ajax.mostRecentCall.args[0].data).toEqual({
+                search_string : 'search string',
+                page_size : this.collection.pageSize,
+                page_index : 2
+            });
         });
 
         it('has next page', function () {
             var response = { total: 35, results: [] };
             this.collection.performSearch('search string');
-            this.server.respond('POST', '/search', [200, {}, JSON.stringify(response)]);
+            this.server.respond('POST', this.collection.url, [200, {}, JSON.stringify(response)]);
             expect(this.collection.hasNextPage()).toEqual(true);
             this.collection.loadNextPage();
             this.server.respond();
@@ -179,17 +219,17 @@ function($, Sinon, Backbone, TemplateHelpers) {
 
             this.collection.performSearch('old search');
             this.collection.performSearch('new search');
-            this.server.respond('POST', '/search', [200, {}, JSON.stringify(response)]);
+            this.server.respond('POST', this.collection.url, [200, {}, JSON.stringify(response)]);
             expect(this.onSearch.calls.length).toEqual(1);
 
             this.collection.performSearch('old search');
             this.collection.cancelSearch();
-            this.server.respond('POST', '/search', [200, {}, JSON.stringify(response)]);
+            this.server.respond('POST', this.collection.url, [200, {}, JSON.stringify(response)]);
             expect(this.onSearch.calls.length).toEqual(1);
 
             this.collection.loadNextPage();
             this.collection.loadNextPage();
-            this.server.respond('POST', '/search', [200, {}, JSON.stringify(response)]);
+            this.server.respond('POST', this.collection.url, [200, {}, JSON.stringify(response)]);
             expect(this.onNext.calls.length).toEqual(1);
         });
 
@@ -220,8 +260,9 @@ function($, Sinon, Backbone, TemplateHelpers) {
     describe('edx.search.List', function () {
 
         beforeEach(function () {
-            setFixtures('<section class="search-content" id="search-content"></section>'+
-                '<section class="course-content" id="course-content"></section>');
+            setFixtures(
+                '<section id="search-content" data-course-name="Test Course"></section>' +
+                '<section id="course-content"></section>');
 
             TemplateHelpers.installTemplate('templates/courseware_search/search_item');
             TemplateHelpers.installTemplate('templates/courseware_search/search_list');
@@ -292,6 +333,7 @@ function($, Sinon, Backbone, TemplateHelpers) {
             this.listView.render();
             expect(this.listView.$el.find('ol')[0]).toExist();
             expect(this.listView.$el.find('li')).toHaveLength(1);
+            expect(this.listView.$el).toContainText('Test Course');
             expect(this.listView.$el).toContainText('this is a short excerpt');
 
             this.collection.set(searchResults);
@@ -310,6 +352,25 @@ function($, Sinon, Backbone, TemplateHelpers) {
             this.collection.hasNextPage = function () { return false; };
             this.listView.render();
             expect(this.listView.$el.find('a.search-load-next')[0]).not.toExist();
+        });
+
+        it('shows a spinner when loading more results', function () {
+            this.collection.totalCount = 123;
+            this.collection.hasNextPage = function () { return true; };
+            this.listView.render();
+            this.listView.loadNext();
+            expect(this.listView.$el.find('a.search-load-next .icon-spin')[0]).toBeVisible();
+            this.listView.renderNext();
+            expect(this.listView.$el.find('a.search-load-next .icon-spin')[0]).toBeHidden();
+        });
+
+    });
+
+
+    describe('edx.search.App', function () {
+
+        beforeEach(function () {
+
         });
 
     });
