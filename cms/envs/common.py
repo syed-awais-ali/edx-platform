@@ -637,9 +637,6 @@ INSTALLED_APPS = (
 
     # Additional problem types
     'edx_jsme',    # Molecular Structure
-
-    # experimental search engine
-    'search',
 )
 
 
@@ -786,6 +783,7 @@ ADVANCED_PROBLEM_TYPES = [
     }
 ]
 
+# Use ElasticSearch for the search engine
 from search.elastic import ElasticSearchEngine
 SEARCH_ENGINE = ElasticSearchEngine
 ELASTIC_SEARCH_MAPPINGS = {
