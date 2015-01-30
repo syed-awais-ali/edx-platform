@@ -437,12 +437,8 @@ define([
                     }]
                 })]);
 
-                Backbone.history.stop();
                 this.app = new SearchApp('a/b/c');
-
-                // start history after the application has finished creating
-                //  all of its routers
-                Backbone.history.start();
+                spyOn(Backbone.history, 'navigate')
             });
 
             afterEach(function () {
@@ -465,10 +461,12 @@ define([
                 expect($('.search-results')).toBeVisible();
             });
 
-            it ('updates navigation history on search', function () {
+            it ('updates navigation history', function () {
                 $('.search-field').val('edx');
                 $('.search-button').trigger('click');
-                expect(Backbone.history.fragment).toEqual('search/edx');
+                expect(Backbone.history.navigate.mostRecentCall.args).toContain('search/edx');
+                $('.cancel-button').trigger('click');
+                expect(Backbone.history.navigate.mostRecentCall.args).not.toContain('search/edx');
             });
 
             it ('aborts sent search request', function () {
@@ -487,11 +485,6 @@ define([
                 $('.cancel-button').trigger('click');
                 expect($('#course-content')).toBeVisible();
                 expect($('#courseware-search-results')).toBeHidden();
-            });
-
-            it ('updates navigation history on clear', function () {
-                $('.cancel-button').trigger('click');
-                expect(Backbone.history.fragment).toEqual('');
             });
 
             it ('loads next page', function () {
