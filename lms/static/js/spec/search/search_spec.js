@@ -387,9 +387,10 @@ define([
                 this.collection.hasNextPage = function () { return true; };
                 this.listView.render();
                 this.listView.loadNext();
-                expect(this.listView.$el.find('a.search-load-next .icon')[0]).toBeVisible();
+                // visible will not work in this case
+                expect(this.listView.$el.find('a.search-load-next .icon')).toHaveCss({display: 'inline'});
                 this.listView.renderNext();
-                expect(this.listView.$el.find('a.search-load-next .icon')[0]).toBeHidden();
+                expect(this.listView.$el.find('a.search-load-next .icon')).toHaveCss(({display: 'none'}));
             });
 
         });
