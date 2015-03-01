@@ -9,6 +9,7 @@ from django.core.urlresolvers import reverse
 from mock import patch, ANY, Mock
 from nose.tools import assert_true, assert_equal  # pylint: disable=E0611
 from opaque_keys.edx.locations import SlashSeparatedCourseKey
+from lms import startup
 
 from courseware.tests.modulestore_config import TEST_DATA_MIXED_MODULESTORE
 from django_comment_client.base import views
@@ -19,6 +20,8 @@ from student.tests.factories import CourseEnrollmentFactory, UserFactory
 from util.testing import UrlResetMixin
 from xmodule.modulestore.tests.factories import CourseFactory
 from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase
+
+from edx_notifications.lib.consumer import get_notifications_for_user
 
 log = logging.getLogger(__name__)
 

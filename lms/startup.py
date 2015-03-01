@@ -15,6 +15,7 @@ import analytics
 
 log = logging.getLogger(__name__)
 
+from edx_notifications import startup
 
 def run():
     """
@@ -31,6 +32,9 @@ def run():
 
     add_mimetypes()
 
+    if settings.FEATURES.get('NOTIFICATIONS_ENABLED', False):
+        startup_notification_subsystem()
+
     if settings.FEATURES.get('USE_CUSTOM_THEME', False):
         enable_theme()
 
@@ -40,7 +44,7 @@ def run():
     if settings.FEATURES.get('ENABLE_THIRD_PARTY_AUTH', False):
         enable_third_party_auth()
 
-    # Initialize Segment.io analytics module. Flushes first time a message is received and 
+    # Initialize Segment.io analytics module. Flushes first time a message is received and
     # every 50 messages thereafter, or if 10 seconds have passed since last flush
     if settings.FEATURES.get('SEGMENT_IO_LMS') and hasattr(settings, 'SEGMENT_IO_LMS_KEY'):
         analytics.init(settings.SEGMENT_IO_LMS_KEY, flush_at=50)
@@ -144,3 +148,10 @@ def enable_third_party_auth():
 
     from third_party_auth import settings as auth_settings
     auth_settings.apply_settings(settings.THIRD_PARTY_AUTH, settings)
+
+
+def startup_notification_subsystem():
+    """
+    Initialize the Notification subsystem
+    """
+    startup.initialize()
