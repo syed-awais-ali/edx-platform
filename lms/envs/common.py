@@ -309,7 +309,7 @@ FEATURES = {
     'ORGANIZATIONS_APP': False,
 
     # Enable the edx-notifications subssytem
-    'ENABLE_NOTIFICATIONS': False,
+    'NOTIFICATIONS_ENABLED': False,
 }
 
 # Ignore static asset files on import which match this pattern
