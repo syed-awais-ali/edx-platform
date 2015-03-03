@@ -387,22 +387,25 @@ def vote_for_comment(request, course_id, comment_id, value):
     """
     given a course_id and comment_id,
     """
+
     course_key = SlashSeparatedCourseKey.from_deprecated_string(course_id)
     user = cc.User.from_django_user(request.user)
     comment = cc.Comment.find(comment_id)
     user.vote(comment, value)
 
     # Feature Flag to check that notifications are enabled or not.
-    if settings.FEATURES.get("NOTIFICATIONS_ENABLED", False):
+    if value=='up' and settings.FEATURES.get("NOTIFICATIONS_ENABLED", False):
         action_user_id = request.user.id
-        original_poster_id = int(thread.user_id)
+        original_poster_id = int(comment.user_id)
+
+        thread = cc.Thread.find(comment.thread_id)
 
         # we have to only send the notifications when
-        # the user voting the thread is not
-        # the same user who created the thread
+        # the user voting comment the comment is not
+        # the same user who created the comment
         if not action_user_id == original_poster_id:
             publish_discussion_notification(
-                msg_type_name='open-edx.lms.discussions.post-upvoted',
+                msg_type_name='open-edx.lms.discussions.comment-upvoted',
                 course_id=course_id,
                 original_poster_id=original_poster_id,
                 action_user_id=action_user_id,
@@ -441,6 +444,26 @@ def vote_for_thread(request, course_id, thread_id, value):
     user = cc.User.from_django_user(request.user)
     thread = cc.Thread.find(thread_id)
     user.vote(thread, value)
+
+    # Feature Flag to check that notifications are enabled or not.
+    if value=='up' and settings.FEATURES.get("NOTIFICATIONS_ENABLED", False):
+        action_user_id = request.user.id
+        original_poster_id = int(thread.user_id)
+
+        # we have to only send the notifications when
+        # the user voting the thread is not
+        # the same user who created the thread
+        if not action_user_id == original_poster_id:
+            publish_discussion_notification(
+                msg_type_name='open-edx.lms.discussions.post-upvoted',
+                course_id=course_id,
+                original_poster_id=original_poster_id,
+                action_user_id=action_user_id,
+                action_username=request.user.username,
+                thread_title=thread.title,
+                link_to_thread=permalink(thread)
+            )
+
     return JsonResponse(safe_content(thread.to_dict(), course_key))
 
 
