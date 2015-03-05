@@ -25,6 +25,7 @@ from edx_notifications.lib.publisher import (
 from edx_notifications.data import NotificationMessage
 from courseware.courses import get_course_with_access, get_course_by_id
 from course_groups.cohorts import get_cohort_id, is_commentable_cohorted, get_cohort_by_id
+from course_groups.tasks import publish_course_group_notification_task
 import django_comment_client.settings as cc_settings
 from django_comment_client.utils import (
     add_courseware_context,
@@ -156,6 +157,30 @@ def create_thread(request, course_id, commentable_id):
 
     data = thread.to_dict()
 
+    if thread.get('group_id'):
+        # Send a notification message when anyone posts a new thread on
+        # a cohorted/private discussion
+
+        # Feature Flag to check that notifications are enabled or not.
+        if settings.FEATURES.get("NOTIFICATIONS_ENABLED", False):
+            # get the notification type.
+            notification_msg = NotificationMessage(
+                msg_type=get_notification_type(u'open-edx.lms.discussions.cohorted-thread-added'),
+                namespace=unicode(course_key),
+                payload={
+                    '_schema_version': '1',
+                    'action_username': request.user.username,
+                    'thread_title': thread.title,
+                    'link_to_thread': permalink(thread),
+                }
+            )
+
+            # Send the notification_msg to the cohorted group via Celery
+            publish_course_group_notification_task.delay(
+                thread.get('group_id'),
+                notification_msg
+            )
+
     add_courseware_context([data], course)
     if request.is_ajax():
         return ajax_content_response(request, course_key, data)
@@ -241,18 +266,37 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
         user.follow(comment.thread)
 
     # Feature Flag to check that notifications are enabled or not.
-    # parent_id is None: publish notification only when creating the comment on
-    # the thread not replying on the comment. When the user replied on the comment
-    # the parent_id is not None at that time
-    if settings.FEATURES.get("NOTIFICATIONS_ENABLED", False) and parent_id is None:
+    if settings.FEATURES.get("NOTIFICATIONS_ENABLED", False):
         thread = cc.Thread.find(thread_id)
         action_user_id = request.user.id
         original_poster_id = int(thread.user_id)
 
-        # we have to only send the notifications when
-        # the user commenting the thread is not
-        # the same user who created the thread
-        if not action_user_id == original_poster_id:
+        if thread.get('group_id'):
+            # We always send a notification to the whole cohort
+            # when someone posts a comment
+            notification_msg = NotificationMessage(
+                msg_type=get_notification_type(u'open-edx.lms.discussions.cohorted-comment-added'),
+                namespace=unicode(course_key),
+                payload={
+                    '_schema_version': '1',
+                    'action_username': request.user.username,
+                    'thread_title': thread.title,
+                    'link_to_thread': permalink(thread),
+                }
+            )
+
+            # Send the notification_msg to the cohorted group via Celery
+            publish_course_group_notification_task.delay(
+                thread.get('group_id'),
+                notification_msg
+            )
+        elif parent_id is None and action_user_id == original_poster_id:
+            # we have to only send the notifications when
+            # the user commenting the thread is not
+            # the same user who created the thread
+            # parent_id is None: publish notification only when creating the comment on
+            # the thread not replying on the comment. When the user replied on the comment
+            # the parent_id is not None at that time
             publish_discussion_notification(
                 msg_type_name='open-edx.lms.discussions.reply-to-thread',
                 course_id=course_key.to_deprecated_string(),
