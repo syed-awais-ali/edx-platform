@@ -2,14 +2,23 @@
 Signal handlers supporting various gradebook use cases
 """
 from django.dispatch import receiver
+from django.conf import settings
+from django.db.models.signals import post_save, pre_save
 
 from courseware import grades
 from courseware.views import get_course
 from courseware.signals import score_changed
 from util.request import RequestMockWithoutMiddleware
 from util.signals import course_deleted
+from student.roles import get_aggregate_exclusion_user_ids
 
 from gradebook.models import StudentGradebook, StudentGradebookHistory
+
+from edx_notifications.lib.publisher import (
+    publish_notification_to_user,
+    get_notification_type
+)
+from edx_notifications.data import NotificationMessage
 
 
 @receiver(score_changed)
@@ -45,3 +54,60 @@ def on_course_deleted(sender, **kwargs):  # pylint: disable=W0613
     course_key = kwargs['course_key']
     StudentGradebook.objects.filter(course_id=course_key).delete()
     StudentGradebookHistory.objects.filter(course_id=course_key).delete()
+
+
+#
+# Support for Notifications, these two receivers should actually be migrated into a new Leaderboard django app.
+# For now, put the business logic here, but it is pretty decoupled through event signaling
+# so we should be able to move these files easily when we are able to do so
+#
+@receiver(pre_save, sender=StudentGradebook)
+def handle_studentgradebook_pre_save_signal(sender, instance, **kwargs):
+    """
+    Handle the pre-save ORM event on CourseModuleCompletions
+    """
+
+    if settings.FEATURES['NOTIFICATIONS_ENABLED']:
+        # attach the rank of the user before the save is completed
+        data = StudentGradebook.get_user_position(
+            instance.course_id,
+            instance.user.id,
+            exclude_users=get_aggregate_exclusion_user_ids(instance.course_id)
+        )
+
+        grade = data['user_grade']
+        leaderboard_rank = data['user_position'] if grade > 0.0 else 0
+
+        instance.presave_leaderboard_rank = leaderboard_rank
+
+
+@receiver(post_save, sender=StudentGradebook)
+def handle_studentgradebook_post_save_signal(sender, instance, **kwargs):
+    """
+    Handle the pre-save ORM event on CourseModuleCompletions
+    """
+
+    if settings.FEATURES['NOTIFICATIONS_ENABLED']:
+        # attach the rank of the user before the save is completed
+        data = StudentGradebook.get_user_position(
+            instance.course_id,
+            instance.user.id,
+            exclude_users=get_aggregate_exclusion_user_ids(instance.course_id)
+        )
+
+        leaderboard_rank = data['user_position']
+        grade = data['user_grade']
+
+        if grade > 0.0 and leaderboard_rank < getattr(settings, 'LEADERBOARD_SIZE', 3):
+            # We are in the leaderboard, so see if our rank changed
+            if leaderboard_rank != instance.presave_leaderboard_rank:
+                notification_msg = NotificationMessage(
+                    msg_type=get_notification_type(u'open-edx.lms.leaderboard.gradebook.rank-changed'),
+                    namespace=unicode(instance.course_id),
+                    payload={
+                        '_schema_version': '1',
+                        'old_rank': instance.presave_leaderboard_rank,
+                        'rank': leaderboard_rank,
+                    }
+                )
+                publish_notification_to_user(int(instance.user.id), notification_msg)
