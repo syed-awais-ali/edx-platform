@@ -154,4 +154,11 @@ def startup_notification_subsystem():
     """
     Initialize the Notification subsystem
     """
-    startup.initialize()
+    try:
+        startup.initialize()
+    except Exception:
+        # Note this will fail when we try to run migrations as manage.py will call startup.py
+        # and startup.initialze() will try to manipulate some database tables.
+        # We need to research how to identify when we are being started up as part of
+        # a migration script
+        pass
