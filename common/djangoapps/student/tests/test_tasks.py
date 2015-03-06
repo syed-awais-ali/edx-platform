@@ -22,11 +22,12 @@ class StudentTasksTestCase(ModuleStoreTestCase):
     def setUp(self):
         super(StudentTasksTestCase, self).setUp()
         self.course = CourseFactory.create()
-        startup.startup_notification_subsystem()
 
     @patch.dict("django.conf.settings.FEATURES", {"NOTIFICATIONS_ENABLED": True})
     def test_course_bulk_notification_tests(self):
         # create new users and enroll them in the course.
+        startup.startup_notification_subsystem()
+
         test_user_1 = UserFactory.create(password='test_pass')
         CourseEnrollmentFactory(user=test_user_1, course_id=self.course.id)
         test_user_2 = UserFactory.create(password='test_pass')
