@@ -169,9 +169,9 @@ def create_thread(request, course_id, commentable_id):
                 namespace=unicode(course_key),
                 payload={
                     '_schema_version': '1',
+                    '_click_link': permalink(thread),
                     'action_username': request.user.username,
                     'thread_title': thread.title,
-                    'link_to_thread': permalink(thread),
                 }
             )
 
@@ -279,9 +279,9 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
                 namespace=unicode(course_key),
                 payload={
                     '_schema_version': '1',
+                    '_click_link': permalink(thread),
                     'action_username': request.user.username,
                     'thread_title': thread.title,
-                    'link_to_thread': permalink(thread),
                 }
             )
 
@@ -304,7 +304,7 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
                 action_user_id=action_user_id,
                 action_username=request.user.username,
                 thread_title=thread.title,
-                link_to_thread=permalink(thread)
+                click_link=permalink(thread)
             )
 
     if request.is_ajax():
@@ -455,7 +455,7 @@ def vote_for_comment(request, course_id, comment_id, value):
                 action_user_id=action_user_id,
                 action_username=request.user.username,
                 thread_title=thread.title,
-                link_to_thread=permalink(thread)
+                click_link=permalink(thread)
             )
 
     return JsonResponse(safe_content(comment.to_dict(), course_key))
@@ -505,7 +505,7 @@ def vote_for_thread(request, course_id, thread_id, value):
                 action_user_id=action_user_id,
                 action_username=request.user.username,
                 thread_title=thread.title,
-                link_to_thread=permalink(thread)
+                click_link=permalink(thread)
             )
 
     return JsonResponse(safe_content(thread.to_dict(), course_key))
@@ -643,14 +643,14 @@ def follow_thread(request, course_id, thread_id):
                 action_user_id=action_user_id,
                 action_username=request.user.username,
                 thread_title=thread.title,
-                link_to_thread=permalink(thread)
+                click_link=permalink(thread)
             )
 
     return JsonResponse({})
 
 
 def publish_discussion_notification(msg_type_name, course_id, original_poster_id,  # pylint: disable=invalid-name
-                                    action_user_id, action_username, thread_title, link_to_thread):
+                                    action_user_id, action_username, thread_title, click_link):
     """
     registers and publish the notification to the original
     poster of the thread.
@@ -661,10 +661,10 @@ def publish_discussion_notification(msg_type_name, course_id, original_poster_id
         msg_type=msg_type,
         payload={
             '_schema_version': '1',
+            '_click_link': click_link,
             'action_user_id': action_user_id,
             'action_username': action_username,
             'thread_title': thread_title,
-            'link_to_thread': link_to_thread
         }
     )
 
