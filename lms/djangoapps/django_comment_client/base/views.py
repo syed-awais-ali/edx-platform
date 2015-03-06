@@ -279,7 +279,7 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
             # when someone posts a comment
             notification_msg = NotificationMessage(
                 msg_type=get_notification_type(u'open-edx.lms.discussions.cohorted-comment-added'),
-                namespace=unicode(course_key),
+                namespace=str(course_key),
                 payload={
                     '_schema_version': '1',
                     '_click_link': permalink(thread),
@@ -305,7 +305,7 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
             # the parent_id is not None at that time
             publish_discussion_notification(
                 msg_type_name='open-edx.lms.discussions.reply-to-thread',
-                course_id=course_key.to_deprecated_string(),
+                course_id=str(course_key),
                 original_poster_id=original_poster_id,
                 action_user_id=action_user_id,
                 action_username=request.user.username,
@@ -456,7 +456,7 @@ def vote_for_comment(request, course_id, comment_id, value):
         if not action_user_id == original_poster_id:
             publish_discussion_notification(
                 msg_type_name='open-edx.lms.discussions.comment-upvoted',
-                course_id=course_id,
+                course_id=str(course_key),
                 original_poster_id=original_poster_id,
                 action_user_id=action_user_id,
                 action_username=request.user.username,
@@ -506,7 +506,7 @@ def vote_for_thread(request, course_id, thread_id, value):
         if not action_user_id == original_poster_id:
             publish_discussion_notification(
                 msg_type_name='open-edx.lms.discussions.post-upvoted',
-                course_id=course_id,
+                course_id=str(course_key),
                 original_poster_id=original_poster_id,
                 action_user_id=action_user_id,
                 action_username=request.user.username,
@@ -630,6 +630,7 @@ def un_pin_thread(request, course_id, thread_id):
 @login_required
 @permitted
 def follow_thread(request, course_id, thread_id):
+    course_key = SlashSeparatedCourseKey.from_deprecated_string(course_id)
     user = cc.User.from_django_user(request.user)
     thread = cc.Thread.find(thread_id)
     user.follow(thread)
@@ -644,7 +645,7 @@ def follow_thread(request, course_id, thread_id):
         if not original_poster_id == action_user_id:
             publish_discussion_notification(
                 msg_type_name='open-edx.lms.discussions.thread-followed',
-                course_id=course_id,
+                course_id=str(course_key),
                 original_poster_id=original_poster_id,
                 action_user_id=action_user_id,
                 action_username=request.user.username,
