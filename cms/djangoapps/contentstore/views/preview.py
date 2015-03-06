@@ -20,7 +20,7 @@ from xblock.runtime import KvsFieldData
 from xblock.django.request import webob_to_django_response, django_to_webob_request
 from xblock.exceptions import NoSuchHandlerError
 from xblock.fragment import Fragment
-from xmodule.services import SettingsService, NotificationsService
+from xmodule.services import SettingsService, NotificationsService, CoursewareParentInfoService
 
 from lms.lib.xblock.field_data import LmsFieldData
 from cms.lib.xblock.field_data import CmsFieldData
@@ -143,6 +143,7 @@ def _preview_module_system(request, descriptor):
     services_list = {
         "i18n": ModuleI18nService(),
         "settings": SettingsService(),
+        "courseware_parent_info": CoursewareParentInfoService(),
     }
 
     if settings.FEATURES.get('NOTIFICATIONS_ENABLED', False):

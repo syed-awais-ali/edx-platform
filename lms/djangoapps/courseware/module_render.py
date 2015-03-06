@@ -36,7 +36,7 @@ from lms.lib.xblock.runtime import (
     unquote_slashes,
     quote_slashes
 )
-from xmodule.services import NotificationsService
+from xmodule.services import NotificationsService, CoursewareParentInfoService
 from edxmako.shortcuts import render_to_string
 from eventtracking import tracker
 from psychometrics.psychoanalyze import make_psychometrics_data_update_handler
@@ -553,11 +553,12 @@ def get_module_system_for_user(user, field_data_cache,
         'i18n': ModuleI18nService(),
         'fs': xblock.reference.plugins.FSService(),
         'settings': SettingsService(),
+        'courseware_parent_info': CoursewareParentInfoService(),
     }
 
     if settings.FEATURES.get('NOTIFICATIONS_ENABLED', False):
         services_list.update({
-            "notifications": NotificationsService()
+            "notifications": NotificationsService(),
         })
 
     system = LmsModuleSystem(

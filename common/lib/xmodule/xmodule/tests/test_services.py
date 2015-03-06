@@ -108,18 +108,3 @@ class TestNotificationsService(TestCase):
         self.assertTrue(hasattr(self.notifications_service, 'get_notifications_for_user'))
         self.assertTrue(hasattr(self.notifications_service, 'mark_notification_read'))
         self.assertTrue(hasattr(self.notifications_service, 'mark_all_user_notification_as_read'))
-
-    def test_call_through(self):
-        """
-        Make sure we can actually call into the wrapped library. We don't need to go through every one
-        but we want to spot check a few to see if the plumbing is there
-        """
-        notification_type = NotificationType(
-            name=u'open-edx.lms.leaderboard.progress.rank-changed',
-            renderer='edx_notifications.openedx.leaderboard.ProgressRankChangedRenderer',
-        )
-
-        self.notifications_service.register_notification_type(notification_type)
-        readback = self.notifications_service.get_notification_type(notification_type.name)
-
-        self.assertEqual(notification_type, readback)

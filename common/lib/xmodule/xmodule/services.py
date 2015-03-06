@@ -7,6 +7,8 @@ import types
 import edx_notifications.lib.publisher as notifications_publisher_lib
 import edx_notifications.lib.consumer as notifications_consumer_lib
 
+from xmodule.modulestore.django import modulestore
+
 
 class SettingsService(object):
     """
@@ -103,3 +105,34 @@ class NotificationsService(object):
             if isinstance(attr, types.FunctionType):
                 if not hasattr(self, attr_name):
                     setattr(self, attr_name, attr)
+
+
+class CoursewareParentInfoService(object):
+    """
+    An xBlock service that provides information about the courseware parent. This could be
+    used for - say - generating breadcumbs
+    """
+
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        """
+        This is the class factory to make sure this is a Singleton
+        """
+        if not cls._instance:
+            cls._instance = super(CoursewareParentInfoService, cls).__new__(
+                                cls, *args, **kwargs)
+        return cls._instance
+
+    def get_parent_info(self, module):
+        """
+        Returns the location and display name of the parent
+        """
+
+        parent_location = modulestore().get_parent_location(module)
+        parent_module = modulestore().get_item(parent_location)
+
+        return {
+            'location': parent_location,
+            'display_name': parent_module.display_name
+        }
