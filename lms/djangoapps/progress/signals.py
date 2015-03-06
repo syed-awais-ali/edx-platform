@@ -102,4 +102,9 @@ def handle_progress_post_save_signal(sender, instance, **kwargs):
                         'rank': leaderboard_rank,
                     }
                 )
-                publish_notification_to_user(int(instance.user.id), notification_msg)
+                try:
+                    publish_notification_to_user(int(instance.user.id), notification_msg)
+                except Exception, ex:
+                    # Notifications are never critical, so we don't want to disrupt any
+                    # other logic processing. So log and continue.
+                    log.exception(ex)

@@ -668,8 +668,12 @@ def publish_discussion_notification(msg_type_name, course_id, original_poster_id
         }
     )
 
-    publish_notification_to_user(original_poster_id, msg)
-
+    try:
+        publish_notification_to_user(original_poster_id, msg)
+    except Exception, ex:
+        # Notifications are never critical, so we don't want to disrupt any
+        # other logic processing. So log and continue.
+        log.exception(ex)
 
 @require_POST
 @login_required
