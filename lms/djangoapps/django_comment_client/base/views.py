@@ -176,9 +176,12 @@ def create_thread(request, course_id, commentable_id):
             )
 
             # Send the notification_msg to the cohorted group via Celery
+            # But don't send to the user who did the action, because
+            # he/she is well aware that they did the action
             publish_course_group_notification_task.delay(
                 thread.get('group_id'),
-                notification_msg
+                notification_msg,
+                exclude_user_ids=[request.user.id]
             )
 
     add_courseware_context([data], course)
@@ -286,9 +289,12 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
             )
 
             # Send the notification_msg to the cohorted group via Celery
+            # But don't send to the user who did the action, because
+            # he/she is well aware that they did the action
             publish_course_group_notification_task.delay(
                 thread.get('group_id'),
-                notification_msg
+                notification_msg,
+                exclude_user_ids=[request.user.id]
             )
         elif parent_id is None and action_user_id == original_poster_id:
             # we have to only send the notifications when
