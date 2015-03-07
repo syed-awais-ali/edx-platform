@@ -745,7 +745,7 @@ MAX_NOTIFICATION_LIST_SIZE = 100
 NOTIFICATION_CLICK_LINK_GROUP_URLS = {
     'announcements': '/courses/{course_id}/announcements',
     'leaderboard': '/courses/{course_id}/cohort',
-    'discussion': '/courses/{course_id}/discussion/{commentable_id}/threads/{thread_id}',
+    'discussions': '/courses/{course_id}/discussion/{commentable_id}/threads/{thread_id}',
     'group-work': '/courses/{course_id}/group_work?seqid={activity_location}'
 }
 
@@ -753,7 +753,7 @@ NOTIFICATION_CLICK_LINK_GROUP_URLS = {
 NOTIFICATION_CLICK_LINK_URL_MAPS = {
     'open-edx.studio.announcements.*': NOTIFICATION_CLICK_LINK_GROUP_URLS['announcements'],
     'open-edx.lms.leaderboard.*': NOTIFICATION_CLICK_LINK_GROUP_URLS['leaderboard'],
-    'open-edx.lms.discussion.*': NOTIFICATION_CLICK_LINK_GROUP_URLS['discussion'],
+    'open-edx.lms.discussions.*': NOTIFICATION_CLICK_LINK_GROUP_URLS['discussions'],
     'open-edx.xblock.group-project.*': NOTIFICATION_CLICK_LINK_GROUP_URLS['group-work'],
 }
 
