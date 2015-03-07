@@ -158,31 +158,16 @@ def create_thread(request, course_id, commentable_id):
     data = thread.to_dict()
 
     if thread.get('group_id'):
-        # Send a notification message when anyone posts a new thread on
-        # a cohorted/private discussion
-
-        # Feature Flag to check that notifications are enabled or not.
-        if settings.FEATURES.get("NOTIFICATIONS_ENABLED", False):
-            # get the notification type.
-            notification_msg = NotificationMessage(
-                msg_type=get_notification_type(u'open-edx.lms.discussions.cohorted-thread-added'),
-                namespace=unicode(course_key),
-                payload={
-                    '_schema_version': '1',
-                    '_click_link': permalink(thread),
-                    'action_username': request.user.username,
-                    'thread_title': thread.title,
-                }
-            )
-
-            # Send the notification_msg to the cohorted group via Celery
-            # But don't send to the user who did the action, because
-            # he/she is well aware that they did the action
-            publish_course_group_notification_task.delay(
-                thread.get('group_id'),
-                notification_msg,
-                exclude_user_ids=[request.user.id]
-            )
+        # Send a notification message, if enabled, when anyone posts a new thread on
+        # a cohorted/private discussion, except the poster him/herself
+        _send_discussion_notification(
+            'open-edx.lms.discussions.cohorted-thread-added',
+            unicode(course_key),
+            thread,
+            request.user,
+            recipient_group_id=thread.get('group_id'),
+            recipient_exclude_user_ids=[request.user.id]
+        )
 
     add_courseware_context([data], course)
     if request.is_ajax():
@@ -190,6 +175,81 @@ def create_thread(request, course_id, commentable_id):
     else:
         return JsonResponse(safe_content(data, course_key))
 
+
+def _send_discussion_notification(
+    type_name,
+    course_id,
+    thread,
+    request_user,
+    recipient_user_id=None,
+    recipient_group_id=None,
+    recipient_exclude_user_ids=None,
+    extra_payload=None,
+):
+    """
+    Helper method to consolidate Notification trigger workflow
+    """
+
+    # is Notifications feature enabled?
+    if not settings.FEATURES.get("NOTIFICATIONS_ENABLED", False):
+        return
+
+    # get the notification type.
+    msg = NotificationMessage(
+        msg_type=get_notification_type(type_name),
+        namespace=course_id,
+        # base payload, other values will be passed in as extra_payload
+        payload={
+            '_schema_version': '1',
+            'action_username': request_user.username,
+            'thread_title': thread.title,
+        }
+    )
+
+    # add in additional payload info
+    # that might be type specific
+    if extra_payload:
+        msg.payload.update(extra_payload)
+
+    # Add information so that we can resolve
+    # click through links in the Notification
+    # rendering, typically this will be used
+    # to bring the user back to this part of
+    # the discussion forum
+
+    #
+    # IMPORTANT: This can be changed to msg.add_click_link() if we
+    # have a URL that we wish to use. In the initial use case,
+    # we need to make the link point to a different front end
+    #
+    msg.add_click_link_params({
+        'course_id': course_id,
+        'commentable_id': thread.commentable_id,
+        'thread_id': thread.id,
+    })
+
+    if recipient_user_id:
+        # send notification to single user
+        try:
+            publish_notification_to_user(recipient_user_id, msg)
+        except Exception, ex:
+            # Notifications are never critical, so we don't want to disrupt any
+            # other logic processing. So log and continue.
+            log.exception(ex)
+
+    if recipient_group_id:
+        # Send the notification_msg to the CourseGroup via Celery
+        # But we can also exclude some users from that list
+        try:
+            publish_course_group_notification_task.delay(
+                recipient_group_id,
+                msg,
+                exclude_user_ids=recipient_exclude_user_ids
+            )
+        except Exception, ex:
+            # Notifications are never critical, so we don't want to disrupt any
+            # other logic processing. So log and continue.
+            log.exception(ex)
 
 @require_POST
 @login_required
@@ -276,41 +336,31 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
 
         if thread.get('group_id'):
             # We always send a notification to the whole cohort
-            # when someone posts a comment
-            notification_msg = NotificationMessage(
-                msg_type=get_notification_type(u'open-edx.lms.discussions.cohorted-comment-added'),
-                namespace=str(course_key),
-                payload={
-                    '_schema_version': '1',
-                    '_click_link': permalink(thread),
-                    'action_username': request.user.username,
-                    'thread_title': thread.title,
-                }
+            # when someone posts a comment, except the poster
+
+            _send_discussion_notification(
+                'open-edx.lms.discussions.cohorted-comment-added',
+                unicode(course_key),
+                thread,
+                request.user,
+                recipient_group_id=thread.get('group_id'),
+                recipient_exclude_user_ids=[request.user.id]
             )
 
-            # Send the notification_msg to the cohorted group via Celery
-            # But don't send to the user who did the action, because
-            # he/she is well aware that they did the action
-            publish_course_group_notification_task.delay(
-                thread.get('group_id'),
-                notification_msg,
-                exclude_user_ids=[request.user.id]
-            )
-        elif parent_id is None and action_user_id == original_poster_id:
+        elif parent_id is None and action_user_id != original_poster_id:
             # we have to only send the notifications when
             # the user commenting the thread is not
             # the same user who created the thread
             # parent_id is None: publish notification only when creating the comment on
             # the thread not replying on the comment. When the user replied on the comment
             # the parent_id is not None at that time
-            publish_discussion_notification(
-                msg_type_name='open-edx.lms.discussions.reply-to-thread',
-                course_id=str(course_key),
-                original_poster_id=original_poster_id,
-                action_user_id=action_user_id,
-                action_username=request.user.username,
-                thread_title=thread.title,
-                click_link=permalink(thread)
+
+            _send_discussion_notification(
+                'open-edx.lms.discussions.reply-to-thread',
+                unicode(course_key),
+                thread,
+                request.user,
+                recipient_user_id=original_poster_id
             )
 
     if request.is_ajax():
@@ -453,15 +503,13 @@ def vote_for_comment(request, course_id, comment_id, value):
         # we have to only send the notifications when
         # the user voting comment the comment is not
         # the same user who created the comment
-        if not action_user_id == original_poster_id:
-            publish_discussion_notification(
-                msg_type_name='open-edx.lms.discussions.comment-upvoted',
-                course_id=str(course_key),
-                original_poster_id=original_poster_id,
-                action_user_id=action_user_id,
-                action_username=request.user.username,
-                thread_title=thread.title,
-                click_link=permalink(thread)
+        if action_user_id != original_poster_id:
+            _send_discussion_notification(
+                'open-edx.lms.discussions.comment-upvoted',
+                unicode(course_key),
+                thread,
+                request.user,
+                recipient_user_id=original_poster_id
             )
 
     return JsonResponse(safe_content(comment.to_dict(), course_key))
@@ -503,15 +551,13 @@ def vote_for_thread(request, course_id, thread_id, value):
         # we have to only send the notifications when
         # the user voting the thread is not
         # the same user who created the thread
-        if not action_user_id == original_poster_id:
-            publish_discussion_notification(
-                msg_type_name='open-edx.lms.discussions.post-upvoted',
-                course_id=str(course_key),
-                original_poster_id=original_poster_id,
-                action_user_id=action_user_id,
-                action_username=request.user.username,
-                thread_title=thread.title,
-                click_link=permalink(thread)
+        if action_user_id != original_poster_id:
+            _send_discussion_notification(
+                'open-edx.lms.discussions.post-upvoted',
+                unicode(course_key),
+                thread,
+                request.user,
+                recipient_user_id=original_poster_id
             )
 
     return JsonResponse(safe_content(thread.to_dict(), course_key))
@@ -642,45 +688,17 @@ def follow_thread(request, course_id, thread_id):
         # who created the thread
         action_user_id = request.user.id
         original_poster_id = int(thread.user_id)
-        if not original_poster_id == action_user_id:
-            publish_discussion_notification(
-                msg_type_name='open-edx.lms.discussions.thread-followed',
-                course_id=str(course_key),
-                original_poster_id=original_poster_id,
-                action_user_id=action_user_id,
-                action_username=request.user.username,
-                thread_title=thread.title,
-                click_link=permalink(thread)
+        if original_poster_id != action_user_id:
+            _send_discussion_notification(
+                'open-edx.lms.discussions.thread-followed',
+                unicode(course_key),
+                thread,
+                request.user,
+                recipient_user_id=original_poster_id
             )
 
     return JsonResponse({})
 
-
-def publish_discussion_notification(msg_type_name, course_id, original_poster_id,  # pylint: disable=invalid-name
-                                    action_user_id, action_username, thread_title, click_link):
-    """
-    registers and publish the notification to the original
-    poster of the thread.
-    """
-    msg_type = get_notification_type(msg_type_name)
-    msg = NotificationMessage(
-        namespace=course_id,
-        msg_type=msg_type,
-        payload={
-            '_schema_version': '1',
-            '_click_link': click_link,
-            'action_user_id': action_user_id,
-            'action_username': action_username,
-            'thread_title': thread_title,
-        }
-    )
-
-    try:
-        publish_notification_to_user(original_poster_id, msg)
-    except Exception, ex:
-        # Notifications are never critical, so we don't want to disrupt any
-        # other logic processing. So log and continue.
-        log.exception(ex)
 
 @require_POST
 @login_required

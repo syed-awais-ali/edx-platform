@@ -111,6 +111,20 @@ def handle_studentgradebook_post_save_signal(sender, instance, **kwargs):
                     }
                 )
 
+                #
+                # add in all the context parameters we'll need to
+                # generate a URL back to the website that will
+                # present the new course announcement
+                #
+                # IMPORTANT: This can be changed to msg.add_click_link() if we
+                # have a particular URL that we wish to use. In the initial use case,
+                # we need to make the link point to a different front end website
+                # so we need to resolve these links at dispatch time
+                #
+                notification_msg.add_click_link_params({
+                    'course_id': unicode(instance.course_id),
+                })
+
                 try:
                     publish_notification_to_user(int(instance.user.id), notification_msg)
                 except Exception, ex:

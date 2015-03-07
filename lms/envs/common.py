@@ -1844,11 +1844,45 @@ SOUTH_MIGRATION_MODULES.update({
 # to prevent run-away queries from happening
 MAX_NOTIFICATION_LIST_SIZE = 100
 
+#
+# Various mapping tables which is used by the MsgTypeToUrlLinkResolver
+# to map a notification type to a statically defined URL path
+#
+# NOTE: NOTIFICATION_CLICK_LINK_GROUP_URLS will usually get read in by the *.envs.json file
+#
+NOTIFICATION_CLICK_LINK_GROUP_URLS = {
+    'announcements': '/courses/{course_id}/announcements',
+    'leaderboard': '/courses/{course_id}/cohort',
+    'discussion': '/courses/{course_id}/discussion/{commentable_id}/threads/{thread_id}',
+    'group-work': '/courses/{course_id}/group_work?seqid={activity_location}'
+}
+
+# This area will likely be constant
+NOTIFICATION_CLICK_LINK_URL_MAPS = {
+    'open-edx.studio.announcements.*': NOTIFICATION_CLICK_LINK_GROUP_URLS['announcements'],
+    'open-edx.lms.leaderboard.*': NOTIFICATION_CLICK_LINK_GROUP_URLS['leaderboard'],
+    'open-edx.lms.discussion.*': NOTIFICATION_CLICK_LINK_GROUP_URLS['discussion'],
+    'open-edx.xblock.group-project.*': NOTIFICATION_CLICK_LINK_GROUP_URLS['group-work'],
+}
+
 # list all known channel providers
 NOTIFICATION_CHANNEL_PROVIDERS = {
     'durable': {
         'class': 'edx_notifications.channels.durable.BaseDurableNotificationChannel',
-        'options': {}
+        'options': {
+            # list out all link resolvers
+            'link_resolvers': {
+                # right now the only defined resolver is 'type_to_url', which
+                # attempts to look up the msg type (key) via
+                # matching on the value
+                'msg_type_to_url': {
+                    'class': 'edx_notifications.channels.link_resolvers.MsgTypeToUrlLinkResolver',
+                    'config': {
+                        '_click_link': NOTIFICATION_CLICK_LINK_URL_MAPS,
+                    }
+                }
+            }
+        }
     },
     'null': {
         'class': 'edx_notifications.channels.null.NullNotificationChannel',
