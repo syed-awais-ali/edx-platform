@@ -128,7 +128,7 @@ class CourseUpdateTest(CourseTestCase):
         payload = json.loads(resp.content)
         self.assertTrue(len(payload) == before_delete - 1)
 
-    @patch.dict("django.conf.settings.FEATURES", {"NOTIFICATIONS_ENABLED": True})
+    @patch.dict("django.conf.settings.FEATURES", {"ENABLE_NOTIFICATIONS": True})
     def test_notifications_enabled_when_new_updates_in_course(self):
         # create new users and enroll them in the course.
         test_user_1 = UserFactory.create(password='test_pass')

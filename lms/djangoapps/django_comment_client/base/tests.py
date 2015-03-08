@@ -140,7 +140,7 @@ class ViewsTestCase(UrlResetMixin, ModuleStoreTestCase, MockRequestSetupMixin):
         assert_equal(response.status_code, 200)
 
 
-    @patch.dict("django.conf.settings.FEATURES", {"NOTIFICATIONS_ENABLED": True})
+    @patch.dict("django.conf.settings.FEATURES", {"ENABLE_NOTIFICATIONS": True})
     def test_create_cohorted_thread(self, mock_request):
         initialize_notifications()
 

@@ -32,7 +32,7 @@ def run():
 
     add_mimetypes()
 
-    if settings.FEATURES.get('NOTIFICATIONS_ENABLED', False):
+    if settings.FEATURES.get('ENABLE_NOTIFICATIONS', False):
         startup_notification_subsystem()
 
     if settings.FEATURES.get('USE_CUSTOM_THEME', False):

@@ -191,7 +191,7 @@ def _send_discussion_notification(
     """
 
     # is Notifications feature enabled?
-    if not settings.FEATURES.get("NOTIFICATIONS_ENABLED", False):
+    if not settings.FEATURES.get("ENABLE_NOTIFICATIONS", False):
         return
 
     # get the notification type.
@@ -329,7 +329,7 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
         user.follow(comment.thread)
 
     # Feature Flag to check that notifications are enabled or not.
-    if settings.FEATURES.get("NOTIFICATIONS_ENABLED", False):
+    if settings.FEATURES.get("ENABLE_NOTIFICATIONS", False):
         thread = cc.Thread.find(thread_id)
         action_user_id = request.user.id
         original_poster_id = int(thread.user_id)
@@ -494,7 +494,7 @@ def vote_for_comment(request, course_id, comment_id, value):
     user.vote(comment, value)
 
     # Feature Flag to check that notifications are enabled or not.
-    if value=='up' and settings.FEATURES.get("NOTIFICATIONS_ENABLED", False):
+    if value=='up' and settings.FEATURES.get("ENABLE_NOTIFICATIONS", False):
         action_user_id = request.user.id
         original_poster_id = int(comment.user_id)
 
@@ -544,7 +544,7 @@ def vote_for_thread(request, course_id, thread_id, value):
     user.vote(thread, value)
 
     # Feature Flag to check that notifications are enabled or not.
-    if value=='up' and settings.FEATURES.get("NOTIFICATIONS_ENABLED", False):
+    if value=='up' and settings.FEATURES.get("ENABLE_NOTIFICATIONS", False):
         action_user_id = request.user.id
         original_poster_id = int(thread.user_id)
 
@@ -682,7 +682,7 @@ def follow_thread(request, course_id, thread_id):
     user.follow(thread)
 
     # Feature Flag to check that notifications are enabled or not.
-    if settings.FEATURES.get("NOTIFICATIONS_ENABLED", False):
+    if settings.FEATURES.get("ENABLE_NOTIFICATIONS", False):
         # only send notifications when the user
         # who is following the thread is not the same
         # who created the thread

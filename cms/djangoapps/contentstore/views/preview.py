@@ -146,7 +146,7 @@ def _preview_module_system(request, descriptor):
         "courseware_parent_info": CoursewareParentInfoService(),
     }
 
-    if settings.FEATURES.get('NOTIFICATIONS_ENABLED', False):
+    if settings.FEATURES.get('ENABLE_NOTIFICATIONS', False):
         services_list.update({
             "notifications": NotificationsService()
         })

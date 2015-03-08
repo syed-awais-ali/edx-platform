@@ -701,7 +701,7 @@ def course_info_update_handler(request, course_key_string, provided_id=None):
     elif request.method in ('POST', 'PUT'):
         try:
             response = JsonResponse(update_course_updates(usage_key, request.json, provided_id, request.user))
-            if settings.FEATURES.get('NOTIFICATIONS_ENABLED', False) and request.method == 'POST':
+            if settings.FEATURES.get('ENABLE_NOTIFICATIONS', False) and request.method == 'POST':
                 # only send bulk notifications to users when there is
                 # new update/announcement in the course.
 

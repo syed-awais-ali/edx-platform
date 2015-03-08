@@ -557,7 +557,8 @@ urlpatterns += (
     url(r'500', handler500),
 )
 
-if settings.FEATURES.get('NOTIFICATIONS_ENABLED'):
+if settings.FEATURES.get('ENABLE_NOTIFICATIONS'):
+    # include into our URL patterns the HTTP RESTfule API that comes with edx-notifications
     urlpatterns += (
         url(r'^api/', include('edx_notifications.server.api.urls')),
     )

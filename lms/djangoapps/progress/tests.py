@@ -33,7 +33,7 @@ from edx_notifications.lib.consumer import get_notifications_count_for_user
 
 @override_settings(MODULESTORE=TEST_DATA_MIXED_MODULESTORE)
 @override_settings(STUDENT_GRADEBOOK=True)
-@patch.dict(settings.FEATURES, {'NOTIFICATIONS_ENABLED': True})
+@patch.dict(settings.FEATURES, {'ENABLE_NOTIFICATIONS': True})
 class CourseModuleCompletionTests(TestCase):
     """ Test suite for CourseModuleCompletion """
 

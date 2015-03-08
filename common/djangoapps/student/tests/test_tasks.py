@@ -23,7 +23,7 @@ class StudentTasksTestCase(ModuleStoreTestCase):
         super(StudentTasksTestCase, self).setUp()
         self.course = CourseFactory.create()
 
-    @patch.dict("django.conf.settings.FEATURES", {"NOTIFICATIONS_ENABLED": True})
+    @patch.dict("django.conf.settings.FEATURES", {"ENABLE_NOTIFICATIONS": True})
     def test_course_bulk_notification_tests(self):
         # create new users and enroll them in the course.
         startup.startup_notification_subsystem()
@@ -33,7 +33,7 @@ class StudentTasksTestCase(ModuleStoreTestCase):
         test_user_2 = UserFactory.create(password='test_pass')
         CourseEnrollmentFactory(user=test_user_2, course_id=self.course.id)
 
-        notification_type = get_notification_type(u'open-edx.studio.announcements.new_announcement')
+        notification_type = get_notification_type(u'open-edx.studio.announcements.new-announcement')
         course = modulestore().get_course(self.course.id, depth=0)
         notification_msg = NotificationMessage(
             msg_type=notification_type,

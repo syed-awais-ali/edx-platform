@@ -67,7 +67,7 @@ def handle_studentgradebook_pre_save_signal(sender, instance, **kwargs):
     Handle the pre-save ORM event on CourseModuleCompletions
     """
 
-    if settings.FEATURES['NOTIFICATIONS_ENABLED']:
+    if settings.FEATURES['ENABLE_NOTIFICATIONS']:
         # attach the rank of the user before the save is completed
         data = StudentGradebook.get_user_position(
             instance.course_id,
@@ -87,7 +87,7 @@ def handle_studentgradebook_post_save_signal(sender, instance, **kwargs):
     Handle the pre-save ORM event on CourseModuleCompletions
     """
 
-    if settings.FEATURES['NOTIFICATIONS_ENABLED']:
+    if settings.FEATURES['ENABLE_NOTIFICATIONS']:
         # attach the rank of the user before the save is completed
         data = StudentGradebook.get_user_position(
             instance.course_id,

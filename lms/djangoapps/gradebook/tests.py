@@ -162,7 +162,7 @@ class GradebookTests(TestCase):
     @patch.dict(settings.FEATURES, {
                 'ALLOW_STUDENT_STATE_UPDATES_ON_CLOSED_COURSE': False,
                 'SIGNAL_ON_SCORE_CHANGED': True,
-                'NOTIFICATIONS_ENABLED': True
+                'ENABLE_NOTIFICATIONS': True
     })
     @patch.dict(settings.FEATURES, {})
     def test_notifications_publishing(self):

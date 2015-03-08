@@ -309,7 +309,7 @@ FEATURES = {
     'ORGANIZATIONS_APP': False,
 
     # Enable the edx-notifications subssytem
-    'NOTIFICATIONS_ENABLED': False,
+    'ENABLE_NOTIFICATIONS': False,
 }
 
 # Ignore static asset files on import which match this pattern
@@ -1842,7 +1842,7 @@ SOUTH_MIGRATION_MODULES.update({
 })
 
 # to prevent run-away queries from happening
-MAX_NOTIFICATION_LIST_SIZE = 100
+NOTIFICATION_MAX_LIST_SIZE = 100
 
 #
 # Various mapping tables which is used by the MsgTypeToUrlLinkResolver
@@ -1850,19 +1850,11 @@ MAX_NOTIFICATION_LIST_SIZE = 100
 #
 # NOTE: NOTIFICATION_CLICK_LINK_GROUP_URLS will usually get read in by the *.envs.json file
 #
-NOTIFICATION_CLICK_LINK_GROUP_URLS = {
-    'announcements': '/courses/{course_id}/announcements',
-    'leaderboard': '/courses/{course_id}/cohort',
-    'discussions': '/courses/{course_id}/discussion/{commentable_id}/threads/{thread_id}',
-    'group-work': '/courses/{course_id}/group_work?seqid={activity_location}'
-}
-
-# This area will likely be constant
 NOTIFICATION_CLICK_LINK_URL_MAPS = {
-    'open-edx.studio.announcements.*': NOTIFICATION_CLICK_LINK_GROUP_URLS['announcements'],
-    'open-edx.lms.leaderboard.*': NOTIFICATION_CLICK_LINK_GROUP_URLS['leaderboard'],
-    'open-edx.lms.discussions.*': NOTIFICATION_CLICK_LINK_GROUP_URLS['discussions'],
-    'open-edx.xblock.group-project.*': NOTIFICATION_CLICK_LINK_GROUP_URLS['group-work'],
+    'open-edx.studio.announcements.*': '/courses/{course_id}/announcements',
+    'open-edx.lms.leaderboard.*': '/courses/{course_id}/cohort',
+    'open-edx.lms.discussions.*': '/courses/{course_id}/discussion/{commentable_id}/threads/{thread_id}',
+    'open-edx.xblock.group-project.*': '/courses/{course_id}/group_work?seqid={activity_location}',
 }
 
 # list all known channel providers
