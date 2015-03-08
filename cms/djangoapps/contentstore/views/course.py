@@ -705,34 +705,37 @@ def course_info_update_handler(request, course_key_string, provided_id=None):
                 # only send bulk notifications to users when there is
                 # new update/announcement in the course.
 
-                # get the notification type.
-                notification_type = get_notification_type(u'open-edx.studio.announcements.new_announcement')
-                course = modulestore().get_course(course_key, depth=0)
-                notification_msg = NotificationMessage(
-                    msg_type=notification_type,
-                    namespace=unicode(course_key),
-                    payload={
-                        '_schema_version': '1',
-                        'course_name': course.display_name,
-                    }
-                )
-
-                # add in all the context parameters we'll need to
-                # generate a URL back to the website that will
-                # present the new course announcement
-                #
-                # IMPORTANT: This can be changed to msg.add_click_link() if we
-                # have a particular URL that we wish to use. In the initial use case,
-                # we need to make the link point to a different front end so
-                # we have to resolve the link when we dispatch the Message
-                #
-                notification_msg.add_click_link_params({
-                    'course_id': unicode(course_key),
-                })
-
-                # Send the notification_msg to the Celery task
                 try:
-                    publish_course_notifications_task.delay(course_key, notification_msg)
+                    # get the notification type.
+                    notification_type = get_notification_type(u'open-edx.studio.announcements.new-announcement')
+                    course = modulestore().get_course(course_key, depth=0)
+                    notification_msg = NotificationMessage(
+                        msg_type=notification_type,
+                        namespace=unicode(course_key),
+                        payload={
+                            '_schema_version': '1',
+                            'course_name': course.display_name,
+                        }
+                    )
+
+                    # add in all the context parameters we'll need to
+                    # generate a URL back to the website that will
+                    # present the new course announcement
+                    #
+                    # IMPORTANT: This can be changed to msg.add_click_link() if we
+                    # have a particular URL that we wish to use. In the initial use case,
+                    # we need to make the link point to a different front end so
+                    # we have to resolve the link when we dispatch the Message
+                    #
+                    notification_msg.add_click_link_params({
+                        'course_id': unicode(course_key),
+                    })
+
+                    # Send the notification_msg to the Celery task
+                    if settings.FEATURES.get('ENABLE_NOTIFICATIONS_CELERY', False):
+                        publish_course_notifications_task.delay(course_key, notification_msg)
+                    else:
+                        publish_course_notifications_task(course_key, notification_msg)
                 except Exception, ex:
                     # Notifications aren't considered critical, so it's OK to fail
                     # log and then continue

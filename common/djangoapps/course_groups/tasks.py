@@ -17,6 +17,7 @@ def publish_course_group_notification_task(course_group_id, notification_msg, ex
     This function will call the edx_notifications api method "bulk_publish_notification_to_users"
     and run as a new Celery task in order to broadcast a message to an entire course cohort
     """
+
     # get the enrolled and active user_id list for this course.
     user_ids = CourseUserGroup.objects.values_list('users', flat=True).filter(
         id=course_group_id

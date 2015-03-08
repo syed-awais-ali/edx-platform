@@ -310,6 +310,9 @@ FEATURES = {
 
     # Enable the edx-notifications subssytem
     'ENABLE_NOTIFICATIONS': False,
+
+    # Whether edx-notifications should use Celery for bulk operations
+    'ENABLE_NOTIFICATIONS_CELERY': False,
 }
 
 # Ignore static asset files on import which match this pattern

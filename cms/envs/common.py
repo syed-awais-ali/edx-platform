@@ -109,6 +109,9 @@ FEATURES = {
 
     # edx-notifications subsystem
     'ENABLE_NOTIFICATIONS': False,
+
+    # Whether edx-notifications should use Celery for bulk operations
+    'ENABLE_NOTIFICATIONS_CELERY': False,
 }
 ENABLE_JASMINE = False
 

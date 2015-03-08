@@ -143,6 +143,7 @@ class CourseUpdateTest(CourseTestCase):
         resp = self.client.ajax_post(
             url, payload, REQUEST_METHOD="POST"
         )
+        self.assertEqual(resp.status_code, 200)
         self.assertHTMLEqual(content, json.loads(resp.content)['content'])
 
         # now the enrolled users should get notification about the

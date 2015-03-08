@@ -93,31 +93,31 @@ def handle_progress_post_save_signal(sender, instance, **kwargs):
         if leaderboard_rank < getattr(settings, 'LEADERBOARD_SIZE', 3):
             # We are in the leaderboard, so see if our rank changed
             if leaderboard_rank != instance.presave_leaderboard_rank:
-                notification_msg = NotificationMessage(
-                    msg_type=get_notification_type(u'open-edx.lms.leaderboard.progress.rank-changed'),
-                    namespace=unicode(instance.course_id),
-                    payload={
-                        '_schema_version': '1',
-                        'old_rank': instance.presave_leaderboard_rank,
-                        'rank': leaderboard_rank,
-                    }
-                )
-
-                #
-                # add in all the context parameters we'll need to
-                # generate a URL back to the website that will
-                # present the new course announcement
-                #
-                # IMPORTANT: This can be changed to msg.add_click_link() if we
-                # have a particular URL that we wish to use. In the initial use case,
-                # we need to make the link point to a different front end website
-                # so we need to resolve these links at dispatch time
-                #
-                notification_msg.add_click_link_params({
-                    'course_id': unicode(instance.course_id),
-                })
-
                 try:
+                    notification_msg = NotificationMessage(
+                        msg_type=get_notification_type(u'open-edx.lms.leaderboard.progress.rank-changed'),
+                        namespace=unicode(instance.course_id),
+                        payload={
+                            '_schema_version': '1',
+                            'old_rank': instance.presave_leaderboard_rank,
+                            'rank': leaderboard_rank,
+                        }
+                    )
+
+                    #
+                    # add in all the context parameters we'll need to
+                    # generate a URL back to the website that will
+                    # present the new course announcement
+                    #
+                    # IMPORTANT: This can be changed to msg.add_click_link() if we
+                    # have a particular URL that we wish to use. In the initial use case,
+                    # we need to make the link point to a different front end website
+                    # so we need to resolve these links at dispatch time
+                    #
+                    notification_msg.add_click_link_params({
+                        'course_id': unicode(instance.course_id),
+                    })
+
                     publish_notification_to_user(int(instance.user.id), notification_msg)
                 except Exception, ex:
                     # Notifications are never critical, so we don't want to disrupt any

@@ -189,67 +189,68 @@ def _send_discussion_notification(
     """
     Helper method to consolidate Notification trigger workflow
     """
+    try:
+        # is Notifications feature enabled?
+        if not settings.FEATURES.get("ENABLE_NOTIFICATIONS", False):
+            return
 
-    # is Notifications feature enabled?
-    if not settings.FEATURES.get("ENABLE_NOTIFICATIONS", False):
-        return
+        # get the notification type.
+        msg = NotificationMessage(
+            msg_type=get_notification_type(type_name),
+            namespace=course_id,
+            # base payload, other values will be passed in as extra_payload
+            payload={
+                '_schema_version': '1',
+                'action_username': request_user.username,
+                'thread_title': thread.title,
+            }
+        )
 
-    # get the notification type.
-    msg = NotificationMessage(
-        msg_type=get_notification_type(type_name),
-        namespace=course_id,
-        # base payload, other values will be passed in as extra_payload
-        payload={
-            '_schema_version': '1',
-            'action_username': request_user.username,
-            'thread_title': thread.title,
-        }
-    )
+        # add in additional payload info
+        # that might be type specific
+        if extra_payload:
+            msg.payload.update(extra_payload)
 
-    # add in additional payload info
-    # that might be type specific
-    if extra_payload:
-        msg.payload.update(extra_payload)
+        # Add information so that we can resolve
+        # click through links in the Notification
+        # rendering, typically this will be used
+        # to bring the user back to this part of
+        # the discussion forum
 
-    # Add information so that we can resolve
-    # click through links in the Notification
-    # rendering, typically this will be used
-    # to bring the user back to this part of
-    # the discussion forum
+        #
+        # IMPORTANT: This can be changed to msg.add_click_link() if we
+        # have a URL that we wish to use. In the initial use case,
+        # we need to make the link point to a different front end
+        #
+        msg.add_click_link_params({
+            'course_id': course_id,
+            'commentable_id': thread.commentable_id,
+            'thread_id': thread.id,
+        })
 
-    #
-    # IMPORTANT: This can be changed to msg.add_click_link() if we
-    # have a URL that we wish to use. In the initial use case,
-    # we need to make the link point to a different front end
-    #
-    msg.add_click_link_params({
-        'course_id': course_id,
-        'commentable_id': thread.commentable_id,
-        'thread_id': thread.id,
-    })
-
-    if recipient_user_id:
-        # send notification to single user
-        try:
+        if recipient_user_id:
+            # send notification to single user
             publish_notification_to_user(recipient_user_id, msg)
-        except Exception, ex:
-            # Notifications are never critical, so we don't want to disrupt any
-            # other logic processing. So log and continue.
-            log.exception(ex)
 
-    if recipient_group_id:
-        # Send the notification_msg to the CourseGroup via Celery
-        # But we can also exclude some users from that list
-        try:
-            publish_course_group_notification_task.delay(
-                recipient_group_id,
-                msg,
-                exclude_user_ids=recipient_exclude_user_ids
-            )
-        except Exception, ex:
-            # Notifications are never critical, so we don't want to disrupt any
-            # other logic processing. So log and continue.
-            log.exception(ex)
+        if recipient_group_id:
+            # Send the notification_msg to the CourseGroup via Celery
+            # But we can also exclude some users from that list
+            if settings.FEATURES.get('ENABLE_NOTIFICATIONS_CELERY', False):
+                publish_course_group_notification_task.delay(
+                    recipient_group_id,
+                    msg,
+                    exclude_user_ids=recipient_exclude_user_ids
+                )
+            else:
+                publish_course_group_notification_task(
+                    recipient_group_id,
+                    msg,
+                    exclude_user_ids=recipient_exclude_user_ids
+                )
+    except Exception, ex:
+        # Notifications are never critical, so we don't want to disrupt any
+        # other logic processing. So log and continue.
+        log.exception(ex)
 
 @require_POST
 @login_required

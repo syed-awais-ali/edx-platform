@@ -269,8 +269,13 @@ class ViewsTestCase(UrlResetMixin, ModuleStoreTestCase, MockRequestSetupMixin):
         response = self.client.post(url, data=thread)
         assert_equal(response.status_code, 200)
 
-        assert_equal(get_notifications_count_for_user(self.student.id), 1)
+        # person who is in the cohort, but created the thread should not get a notification
+        assert_equal(get_notifications_count_for_user(self.student.id), 0)
+
+        # the person who is in the same cohort as the poster should get a notification
         assert_equal(get_notifications_count_for_user(a_user.id), 1)
+
+        # people not in the cohort, should not get the notification
         assert_equal(get_notifications_count_for_user(b_user.id), 0)
         assert_equal(get_notifications_count_for_user(no_user.id), 0)
 
