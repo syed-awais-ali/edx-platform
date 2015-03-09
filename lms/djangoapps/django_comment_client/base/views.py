@@ -331,9 +331,15 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
 
     # Feature Flag to check that notifications are enabled or not.
     if settings.FEATURES.get("ENABLE_NOTIFICATIONS", False):
+        # If creating a sub-comment, then we don't have the original thread_id
+        # so we have to get it from the parent
+        if not thread_id and parent_id:
+            comment = cc.Comment.find(parent_id)
+            thread_id = comment.thread_id
+
         thread = cc.Thread.find(thread_id)
         action_user_id = request.user.id
-        original_poster_id = int(thread.user_id)
+        original_poster_id = int(getattr(thread,' user_id', 0))
 
         if thread.get('group_id'):
             # We always send a notification to the whole cohort
