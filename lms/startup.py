@@ -13,6 +13,10 @@ import logging
 from monkey_patch import django_utils_translation
 import analytics
 
+from course_groups.scope_resolver import CourseGroupScopeResolver
+from student.scope_resolver import CourseEnrollmentsScopeResolver
+from edx_notifications.scopes import register_user_scope_resolver
+
 log = logging.getLogger(__name__)
 
 from edx_notifications import startup
@@ -156,6 +160,11 @@ def startup_notification_subsystem():
     """
     try:
         startup.initialize()
+
+        # register the two scope resolvers that the LMS will be providing
+        # to edx-notifications
+        register_user_scope_resolver('course_enrollments', CourseEnrollmentsScopeResolver())
+        register_user_scope_resolver('course_group', CourseGroupScopeResolver())
     except Exception:
         # Note this will fail when we try to run migrations as manage.py will call startup.py
         # and startup.initialze() will try to manipulate some database tables.
