@@ -339,7 +339,7 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
 
         thread = cc.Thread.find(thread_id)
         action_user_id = request.user.id
-        original_poster_id = int(getattr(thread,' user_id', 0))
+        original_poster_id = int(getattr(thread,'user_id', 0))
 
         if thread.get('group_id'):
             # We always send a notification to the whole cohort
