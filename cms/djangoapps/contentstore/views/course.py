@@ -17,6 +17,8 @@ from util.json_request import JsonResponse, JsonResponseBadRequest
 from util.date_utils import get_default_time_display
 from edxmako.shortcuts import render_to_response
 
+from bs4 import BeautifulSoup
+
 from xmodule.course_module import DEFAULT_START_DATE
 from xmodule.error_module import ErrorDescriptor
 from xmodule.modulestore.django import modulestore
@@ -28,6 +30,7 @@ from xmodule.modulestore.exceptions import ItemNotFoundError, DuplicateCourseErr
 from opaque_keys import InvalidKeyError
 from opaque_keys.edx.locations import Location
 from opaque_keys.edx.keys import CourseKey
+from util.html import strip_tags
 
 from django_future.csrf import ensure_csrf_cookie
 from contentstore.course_info_model import get_course_updates, update_course_updates, delete_course_update
@@ -709,12 +712,57 @@ def course_info_update_handler(request, course_key_string, provided_id=None):
                     # get the notification type.
                     notification_type = get_notification_type(u'open-edx.studio.announcements.new-announcement')
                     course = modulestore().get_course(course_key, depth=0)
+
+                    excerpt = strip_tags(request.json['content'])
+
+                    max_len = getattr(settings, 'NOTIFICATIONS_MAX_EXCERPT_LEN', 65)
+                    if len(excerpt) > max_len:
+                        excerpt = "{}...".format(excerpt[:max_len])
+
+                    announcement_date = request.json['date']
+
+                    title = None
+                    try:
+                        # we have to try to parse out a 'title' which
+                        # will be determine through a HTML convention of
+                        # labeling a tag will class 'announcement-title'
+                        parsed_html = BeautifulSoup(request.json['content'])
+
+                        if not parsed_html.body:
+                            # maybe doesn't have <body> outer tags
+                            parsed_html = BeautifulSoup('<body>{}</body>'.format(request.json['content']))
+
+                        if parsed_html.body:
+                            title_tag_name = getattr(settings, 'NOTIFICATIONS_ANNOUNCEMENT_TITLE_TAG', 'p')
+                            title_tag_class = getattr(settings, 'NOTIFICATIONS_ACCOUNCEMENT_TITLE_CLASS', 'announcement-title')
+                            title_tag = parsed_html.body.find(title_tag_name, attrs={'class': title_tag_class})
+
+                            if title_tag:
+                                title = title_tag.text
+
+                            if title:
+                                # remove the title from the excerpt so that it
+                                excerpt = excerpt.replace(title, '')
+
+                    except Exception, ex:
+                        log.exception(ex)
+
+                    if not title:
+                        # default title, if we could not match the pattern
+                        title = _('Announcement on {date}').format(date=announcement_date)
+
+                    excerpt = excerpt.strip()
+                    excerpt = excerpt.replace('\n','').replace('\r','')
+
                     notification_msg = NotificationMessage(
                         msg_type=notification_type,
                         namespace=unicode(course_key),
                         payload={
                             '_schema_version': '1',
                             'course_name': course.display_name,
+                            'excerpt': excerpt,
+                            'announcement_date': announcement_date,
+                            'title': title,
                         }
                     )
 
