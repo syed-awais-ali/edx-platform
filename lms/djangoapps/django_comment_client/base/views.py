@@ -38,6 +38,7 @@ from django_comment_client.utils import (
     get_discussion_categories_ids,
     permalink
 )
+from util.html import strip_tags
 from django_comment_client.permissions import check_permissions_by_view, cached_has_permission
 import lms.lib.comment_client as cc
 import track.views
@@ -76,6 +77,20 @@ def ajax_content_response(request, course_key, content):
 def track_forum_event(request, event_type, data):
     data["user_id"] = request.user.id
     track.views.server_track(request, event_type, data, page="forum")
+
+
+def _get_excerpt(body, max_len=None):
+    """
+    Returns an excerpt from a discussion item body
+    """
+
+    if not max_len:
+        max_len = getattr(settings, 'NOTIFICATIONS_MAX_EXCERPT_LEN', 65)
+
+    excerpt = strip_tags(body).replace('\n', '').replace('\r', '')
+    if len(excerpt) > max_len:
+        excerpt = '{}...'.format(excerpt[:max_len])
+    return excerpt
 
 
 @require_POST
@@ -165,6 +180,7 @@ def create_thread(request, course_id, commentable_id):
             unicode(course_key),
             thread,
             request.user,
+            excerpt=_get_excerpt(thread.body),
             recipient_group_id=thread.get('group_id'),
             recipient_exclude_user_ids=[request.user.id]
         )
@@ -181,6 +197,7 @@ def _send_discussion_notification(
     course_id,
     thread,
     request_user,
+    excerpt=None,
     recipient_user_id=None,
     recipient_group_id=None,
     recipient_exclude_user_ids=None,
@@ -210,6 +227,11 @@ def _send_discussion_notification(
         # that might be type specific
         if extra_payload:
             msg.payload.update(extra_payload)
+
+        if excerpt:
+            msg.payload.update({
+                'excerpt': excerpt,
+            })
 
         # Add information so that we can resolve
         # click through links in the Notification
@@ -331,17 +353,33 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
 
     # Feature Flag to check that notifications are enabled or not.
     if settings.FEATURES.get("ENABLE_NOTIFICATIONS", False):
-        # If creating a sub-comment, then we don't have the original thread_id
-        # so we have to get it from the parent
-        if not thread_id and parent_id:
+        # a response is a reply to a thread
+        # a comment is a reply to a response
+        is_comment = not thread_id and parent_id
+
+        action_user_id = request.user.id
+        replying_to_id = None
+
+        if is_comment:
+            # If creating a comment, then we don't have the original thread_id
+            # so we have to get it from the parent
             comment = cc.Comment.find(parent_id)
             thread_id = comment.thread_id
+            replying_to_id = comment.user_id
 
         thread = cc.Thread.find(thread_id)
-        action_user_id = request.user.id
-        original_poster_id = int(getattr(thread,'user_id', 0))
+        #
+        # IMPORTANT: We have to use getattr() here so that the
+        # object is fully hydrated. This is a known limitation.
+        #
+        group_id = getattr(thread, 'group_id')
 
-        if thread.get('group_id'):
+        if not is_comment:
+            # we must be creating a Reponse on a thread,
+            # so the original poster is the author of the thread
+            replying_to_id = int(getattr(thread, 'user_id', 0))
+
+        if group_id:
             # We always send a notification to the whole cohort
             # when someone posts a comment, except the poster
 
@@ -350,11 +388,12 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
                 unicode(course_key),
                 thread,
                 request.user,
+                excerpt=_get_excerpt(comment.body),
                 recipient_group_id=thread.get('group_id'),
                 recipient_exclude_user_ids=[request.user.id]
             )
 
-        elif parent_id is None and action_user_id != original_poster_id:
+        elif parent_id is None and action_user_id != replying_to_id:
             # we have to only send the notifications when
             # the user commenting the thread is not
             # the same user who created the thread
@@ -367,7 +406,8 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
                 unicode(course_key),
                 thread,
                 request.user,
-                recipient_user_id=original_poster_id
+                excerpt=_get_excerpt(comment.body),
+                recipient_user_id=replying_to_id
             )
 
     if request.is_ajax():
@@ -507,6 +547,10 @@ def vote_for_comment(request, course_id, comment_id, value):
 
         thread = cc.Thread.find(comment.thread_id)
 
+        # refetch the comment, so we have the updated counters
+
+        comment = cc.Comment.find(comment_id)
+
         # we have to only send the notifications when
         # the user voting comment the comment is not
         # the same user who created the comment
@@ -516,7 +560,10 @@ def vote_for_comment(request, course_id, comment_id, value):
                 unicode(course_key),
                 thread,
                 request.user,
-                recipient_user_id=original_poster_id
+                recipient_user_id=original_poster_id,
+                extra_payload={
+                    'num_upvotes': thread.votes['up_count'],
+                }
             )
 
     return JsonResponse(safe_content(comment.to_dict(), course_key))
@@ -555,6 +602,9 @@ def vote_for_thread(request, course_id, thread_id, value):
         action_user_id = request.user.id
         original_poster_id = int(thread.user_id)
 
+        # refetch the thread to get updated count metrics
+        thread = cc.Thread.find(thread_id)
+
         # we have to only send the notifications when
         # the user voting the thread is not
         # the same user who created the thread
@@ -564,7 +614,10 @@ def vote_for_thread(request, course_id, thread_id, value):
                 unicode(course_key),
                 thread,
                 request.user,
-                recipient_user_id=original_poster_id
+                recipient_user_id=original_poster_id,
+                extra_payload={
+                    'num_upvotes': thread.votes['up_count'],
+                }
             )
 
     return JsonResponse(safe_content(thread.to_dict(), course_key))
@@ -695,14 +748,26 @@ def follow_thread(request, course_id, thread_id):
         # who created the thread
         action_user_id = request.user.id
         original_poster_id = int(thread.user_id)
-        if original_poster_id != action_user_id:
-            _send_discussion_notification(
-                'open-edx.lms.discussions.thread-followed',
-                unicode(course_key),
-                thread,
-                request.user,
-                recipient_user_id=original_poster_id
-            )
+
+        # get number of followers
+        try:
+            num_followers = thread.get_num_followers()
+
+            if original_poster_id != action_user_id:
+                _send_discussion_notification(
+                    'open-edx.lms.discussions.thread-followed',
+                    unicode(course_key),
+                    thread,
+                    request.user,
+                    recipient_user_id=original_poster_id,
+                    extra_payload={
+                        'num_followers': num_followers,
+                    }
+                )
+        except Exception, ex:
+            # sending notifications is not critical,
+            # so log error and continue
+            log.exception(ex)
 
     return JsonResponse({})
 
