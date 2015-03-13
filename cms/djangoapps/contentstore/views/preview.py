@@ -110,6 +110,24 @@ class StudioUserService(object):
         return self._request.user.id
 
 
+def get_available_xblock_services():
+    """
+    Returns a dict of available services for xBlocks
+    """
+
+    services = {
+        "i18n": ModuleI18nService(),
+        "settings": SettingsService(),
+        "courseware_parent_info": CoursewareParentInfoService(),
+    }
+
+    if settings.FEATURES.get('ENABLE_NOTIFICATIONS', False):
+        services.update({
+            "notifications": NotificationsService()
+        })
+
+    return services
+
 def _preview_module_system(request, descriptor):
     """
     Returns a ModuleSystem for the specified descriptor that is specialized for
@@ -140,16 +158,7 @@ def _preview_module_system(request, descriptor):
 
     descriptor.runtime._services['user'] = StudioUserService(request)  # pylint: disable=protected-access
 
-    services_list = {
-        "i18n": ModuleI18nService(),
-        "settings": SettingsService(),
-        "courseware_parent_info": CoursewareParentInfoService(),
-    }
-
-    if settings.FEATURES.get('ENABLE_NOTIFICATIONS', False):
-        services_list.update({
-            "notifications": NotificationsService()
-        })
+    services = get_available_xblock_services()
 
     return PreviewModuleSystem(
         static_url=settings.STATIC_URL,
@@ -171,7 +180,7 @@ def _preview_module_system(request, descriptor):
         error_descriptor_class=ErrorDescriptor,
         get_user_role=lambda: get_user_role(request.user, course_id),
         descriptor_runtime=descriptor.runtime,
-        services=services_list,
+        services=services,
     )
 
 
