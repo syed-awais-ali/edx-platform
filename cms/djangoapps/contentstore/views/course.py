@@ -715,6 +715,9 @@ def course_info_update_handler(request, course_key_string, provided_id=None):
 
                     excerpt = strip_tags(request.json['content'])
 
+                    excerpt = excerpt.strip()
+                    excerpt = excerpt.replace('\n','').replace('\r','')
+
                     max_len = getattr(settings, 'NOTIFICATIONS_MAX_EXCERPT_LEN', 65)
                     if len(excerpt) > max_len:
                         excerpt = "{}...".format(excerpt[:max_len])
@@ -750,9 +753,6 @@ def course_info_update_handler(request, course_key_string, provided_id=None):
                     if not title:
                         # default title, if we could not match the pattern
                         title = _('Announcement on {date}').format(date=announcement_date)
-
-                    excerpt = excerpt.strip()
-                    excerpt = excerpt.replace('\n','').replace('\r','')
 
                     notification_msg = NotificationMessage(
                         msg_type=notification_type,
