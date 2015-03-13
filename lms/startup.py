@@ -21,6 +21,7 @@ log = logging.getLogger(__name__)
 
 from edx_notifications import startup
 
+
 def run():
     """
     Executed during django startup
