@@ -7,6 +7,10 @@ import logging
 from edx_notifications.scopes import NotificationUserScopeResolver
 from student.models import CourseEnrollment
 
+from opaque_keys.edx.keys import CourseKey
+from opaque_keys import InvalidKeyError
+from opaque_keys.edx.locations import SlashSeparatedCourseKey
+
 log = logging.getLogger(__name__)
 
 
@@ -36,7 +40,13 @@ class CourseEnrollmentsScopeResolver(NotificationUserScopeResolver):
             # did not receive expected parameters
             return None
 
+        course_id = scope_context['course_id']
+        try:
+            course_key = CourseKey.from_string(course_id)
+        except InvalidKeyError:
+           course_key = SlashSeparatedCourseKey.from_deprecated_string(course_id)
+
         return CourseEnrollment.objects.values_list('user_id', flat=True).filter(
             is_active=1,
-            course_id=scope_context['course_id']
+            course_id=course_key
         )

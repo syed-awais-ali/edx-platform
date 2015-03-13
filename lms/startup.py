@@ -165,9 +165,9 @@ def startup_notification_subsystem():
         # to edx-notifications
         register_user_scope_resolver('course_enrollments', CourseEnrollmentsScopeResolver())
         register_user_scope_resolver('course_group', CourseGroupScopeResolver())
-    except Exception:
+    except Exception, ex:
         # Note this will fail when we try to run migrations as manage.py will call startup.py
         # and startup.initialze() will try to manipulate some database tables.
         # We need to research how to identify when we are being started up as part of
         # a migration script
-        pass
+        log.exception(ex)
