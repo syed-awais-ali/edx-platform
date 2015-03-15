@@ -1431,6 +1431,9 @@ INSTALLED_APPS = (
 
     # EDX API application
     'api_manager',
+
+    # Social Engagement
+    'social_engagement',
 )
 
 ######################### MARKETING SITE ###############################

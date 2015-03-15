@@ -107,8 +107,8 @@ def handle_studentgradebook_post_save_signal(sender, instance, **kwargs):
                         namespace=unicode(instance.course_id),
                         payload={
                             '_schema_version': '1',
-                            'old_rank': instance.presave_leaderboard_rank,
                             'rank': leaderboard_rank,
+                            'leaderboard_name': 'Proficiency',
                         }
                     )
 
