@@ -41,7 +41,7 @@ class StudentSocialEngagementScore(TimeStampedModel):
         return entry.score
 
     @classmethod
-    def save_user_engagment_score(cls, course_key, user_id, score):
+    def save_user_engagement_score(cls, course_key, user_id, score):
         """
         Creates or updates an engagement score
         """

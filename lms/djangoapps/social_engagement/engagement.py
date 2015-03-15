@@ -14,6 +14,8 @@ from xmodule.modulestore.django import modulestore
 from opaque_keys.edx.keys import CourseKey
 from student.models import CourseEnrollment
 from student.roles import get_aggregate_exclusion_user_ids
+from lms.lib.comment_client.utils import CommentClientRequestError
+from requests.exceptions import ConnectionError
 
 from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_save
@@ -27,14 +29,14 @@ from edx_notifications.data import NotificationMessage
 log = logging.getLogger(__name__)
 
 
-def update_user_engagement_scores(course_id, user_id, compute_if_closed_course=False, course_descriptor=None):
+def update_user_engagement_score(course_id, user_id, compute_if_closed_course=False, course_descriptor=None):
     """
     Compute the user's Engagement Score and store it in the
     database. We will not update the record, if the score
     is the same as it currently exists
     """
 
-    course_key = CourseKey(course_id)
+    course_key = course_id if isinstance(course_id, CourseKey) else CourseKey.from_string(course_id)
 
     if not course_descriptor:
         # it course descriptor was not passed in (as an optimization)
@@ -44,18 +46,20 @@ def update_user_engagement_scores(course_id, user_id, compute_if_closed_course=F
         # couldn't find course?!?
         return
 
-    if not compute_if_closed_course:
+    if not compute_if_closed_course and course_descriptor.end:
         # if course is closed then don't bother. Note
         # we can override this if we want to force
         # update
         now_utc = datetime.now(pytz.UTC)
-        if notw_utc > course_descriptor.end:
+        if now_utc > course_descriptor.end:
             return
 
     previous_score = StudentSocialEngagementScore.get_user_engagement_score(course_key, user_id)
 
     try:
         log.info('Updating social engagement score for user_id {}  in course_key {}'.format(user_id, course_key))
+
+        # cs_comment_service works is slash separated course_id strings
         slash_course_id = course_key.to_deprecated_string()
 
         # get the course social stats, passing along a course end date to remove any activity after the course
@@ -63,6 +67,7 @@ def update_user_engagement_scores(course_id, user_id, compute_if_closed_course=F
         # and so there might be a HTTP based communication error
 
         social_stats = _get_user_social_stats(user_id, slash_course_id, course_descriptor.end)
+
         current_score = _compute_social_engagement_score(social_stats)
 
         if current_score > previous_score or previous_score is None:
@@ -72,13 +77,13 @@ def update_user_engagement_scores(course_id, user_id, compute_if_closed_course=F
         log.exception(error)
 
 
-def _get_user_social_stats(user_id, course_id, end_date):
+def _get_user_social_stats(user_id, slash_course_id, end_date):
     """
     Helper function which basically calls into the cs_comment_service. We wrap this,
     to make it easier to write mock functions for unit testing
     """
 
-    return (get_user_social_stats(user_id, slash_course_id, end_date=course_descriptor.end))[user_id]
+    return (get_user_social_stats(user_id, slash_course_id, end_date=end_date))[user_id]
 
 
 def _compute_social_engagement_score(social_metrics):
@@ -102,11 +107,10 @@ def _compute_social_engagement_score(social_metrics):
     )
 
     social_total = 0
-    for key, val in settings.social_metric_points.iteritems():
-        social_total += getattr(social_metrics, key, 0) * val
+    for key, val in social_metric_points.iteritems():
+        social_total += social_metrics.get(key, 0) * val
 
     return social_total
-
 
 def update_course_engagement_scores(course_id, compute_if_closed_course=False, course_descriptor=None):
     """
@@ -114,7 +118,7 @@ def update_course_engagement_scores(course_id, compute_if_closed_course=False, c
     students engagement scores
     """
 
-    course_key = CourseKey(course_id)
+    course_key = course_id if isinstance(course_id, CourseKey) else CourseKey.from_string(course_id)
 
     if not course_descriptor:
         # pre-fetch course descriptor, so we don't have to refetch later
@@ -130,10 +134,10 @@ def update_course_engagement_scores(course_id, compute_if_closed_course=False, c
     )
 
     for user_id in user_ids:
-        update_user_engagement_score(course_id, user_id, compute_if_closed_course=compute_if_closed_course, course_descriptor=course_descriptor)
+        update_user_engagement_score(course_key, user_id, compute_if_closed_course=compute_if_closed_course, course_descriptor=course_descriptor)
 
 
-def update_all_courses_engagement_scores():
+def update_all_courses_engagement_scores(compute_if_closed_course=False):
     """
     Iterates over all courses in the modelstore and computes engagment
     scores for all enrolled students
@@ -143,8 +147,8 @@ def update_all_courses_engagement_scores():
 
     for course in courses:
         update_course_engagement_scores(
-            courses.id,
-            compute_if_closed_courses=compute_if_closed_course,
+            course.id,
+            compute_if_closed_course=compute_if_closed_course,
             course_descriptor=course
         )
 
