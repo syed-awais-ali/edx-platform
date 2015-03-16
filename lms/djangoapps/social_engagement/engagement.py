@@ -55,6 +55,7 @@ def update_user_engagement_score(course_id, user_id, compute_if_closed_course=Fa
         # update
         now_utc = datetime.now(pytz.UTC)
         if now_utc > course_descriptor.end:
+            log.info('update_user_engagement_score() is skipping because the course is closed...')
             return
 
     previous_score = StudentSocialEngagementScore.get_user_engagement_score(course_key, user_id)
@@ -74,6 +75,8 @@ def update_user_engagement_score(course_id, user_id, compute_if_closed_course=Fa
         if social_stats:
             current_score = _compute_social_engagement_score(social_stats)
 
+            log.info('previous_score = {}  current_score = {}'.format(previous_score, current_score))
+
             if current_score > previous_score or previous_score is None:
                 StudentSocialEngagementScore.save_user_engagement_score(course_key, user_id, current_score)
 
@@ -88,8 +91,11 @@ def _get_user_social_stats(user_id, slash_course_id, end_date):
     """
 
     stats = get_user_social_stats(user_id, slash_course_id, end_date=end_date)
-    if user_id in stats:
-        return stats
+    log.info('raw stats = {}'.format(stats))
+    # the comment service returns the user_id as a string
+    user_id_str = str(user_id)
+    if user_id_str in stats:
+        return stats[user_id_str]
     else:
         return None
 

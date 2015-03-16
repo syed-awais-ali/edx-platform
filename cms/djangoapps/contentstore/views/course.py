@@ -718,10 +718,6 @@ def course_info_update_handler(request, course_key_string, provided_id=None):
                     excerpt = excerpt.strip()
                     excerpt = excerpt.replace('\n','').replace('\r','')
 
-                    max_len = getattr(settings, 'NOTIFICATIONS_MAX_EXCERPT_LEN', 65)
-                    if len(excerpt) > max_len:
-                        excerpt = "{}...".format(excerpt[:max_len])
-
                     announcement_date = request.json['date']
 
                     title = None
@@ -744,7 +740,8 @@ def course_info_update_handler(request, course_key_string, provided_id=None):
                                 title = title_tag.text
 
                             if title:
-                                # remove the title from the excerpt so that it
+                                # remove the title from the excerpt so that it doesn't
+                                # count towards the length limit
                                 excerpt = excerpt.replace(title, '')
 
                     except Exception, ex:
@@ -753,6 +750,12 @@ def course_info_update_handler(request, course_key_string, provided_id=None):
                     if not title:
                         # default title, if we could not match the pattern
                         title = _('Announcement on {date}').format(date=announcement_date)
+
+                    # now we have to truncate the notification excerpt to me
+                    # some max length and append an ellipsis
+                    max_len = getattr(settings, 'NOTIFICATIONS_MAX_EXCERPT_LEN', 65)
+                    if len(excerpt) > max_len:
+                        excerpt = "{}...".format(excerpt[:max_len])
 
                     notification_msg = NotificationMessage(
                         msg_type=notification_type,
