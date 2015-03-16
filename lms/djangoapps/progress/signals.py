@@ -90,7 +90,7 @@ def handle_progress_post_save_signal(sender, instance, **kwargs):
             get_aggregate_exclusion_user_ids(instance.course_id)
         )['position']
 
-        if leaderboard_rank < getattr(settings, 'LEADERBOARD_SIZE', 3):
+        if leaderboard_rank <= getattr(settings, 'LEADERBOARD_SIZE', 3):
             # We are in the leaderboard, so see if our rank changed
             if leaderboard_rank != instance.presave_leaderboard_rank:
                 try:

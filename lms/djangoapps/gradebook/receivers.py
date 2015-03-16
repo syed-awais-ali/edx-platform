@@ -98,7 +98,7 @@ def handle_studentgradebook_post_save_signal(sender, instance, **kwargs):
         leaderboard_rank = data['user_position']
         grade = data['user_grade']
 
-        if grade > 0.0 and leaderboard_rank < getattr(settings, 'LEADERBOARD_SIZE', 3):
+        if grade > 0.0 and leaderboard_rank <= getattr(settings, 'LEADERBOARD_SIZE', 3):
             # We are in the leaderboard, so see if our rank changed
             if leaderboard_rank != instance.presave_leaderboard_rank:
                 try:
