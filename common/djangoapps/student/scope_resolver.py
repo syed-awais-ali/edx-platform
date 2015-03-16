@@ -41,10 +41,14 @@ class CourseEnrollmentsScopeResolver(NotificationUserScopeResolver):
             return None
 
         course_id = scope_context['course_id']
-        try:
-            course_key = CourseKey.from_string(course_id)
-        except InvalidKeyError:
-           course_key = SlashSeparatedCourseKey.from_deprecated_string(course_id)
+
+        if not isinstance(course_id , CourseKey):
+            try:
+                course_key = CourseKey.from_string(course_id)
+            except InvalidKeyError:
+               course_key = SlashSeparatedCourseKey.from_deprecated_string(course_id)
+        else:
+            course_key = course_id
 
         return CourseEnrollment.objects.values_list('user_id', flat=True).filter(
             is_active=1,
