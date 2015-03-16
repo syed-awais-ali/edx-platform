@@ -36,6 +36,9 @@ def update_user_engagement_score(course_id, user_id, compute_if_closed_course=Fa
     is the same as it currently exists
     """
 
+    if not settings.FEATURES.get('ENABLE_SOCIAL_ENGAGEMENT', False):
+        return
+
     course_key = course_id if isinstance(course_id, CourseKey) else CourseKey.from_string(course_id)
 
     if not course_descriptor:
@@ -68,10 +71,11 @@ def update_user_engagement_score(course_id, user_id, compute_if_closed_course=Fa
 
         social_stats = _get_user_social_stats(user_id, slash_course_id, course_descriptor.end)
 
-        current_score = _compute_social_engagement_score(social_stats)
+        if social_stats:
+            current_score = _compute_social_engagement_score(social_stats)
 
-        if current_score > previous_score or previous_score is None:
-            StudentSocialEngagementScore.save_user_engagement_score(course_key, user_id, current_score)
+            if current_score > previous_score or previous_score is None:
+                StudentSocialEngagementScore.save_user_engagement_score(course_key, user_id, current_score)
 
     except (CommentClientRequestError, ConnectionError), error:
         log.exception(error)
@@ -83,7 +87,11 @@ def _get_user_social_stats(user_id, slash_course_id, end_date):
     to make it easier to write mock functions for unit testing
     """
 
-    return (get_user_social_stats(user_id, slash_course_id, end_date=end_date))[user_id]
+    stats = get_user_social_stats(user_id, slash_course_id, end_date=end_date)
+    if user_id in stats:
+        return stats
+    else:
+        return None
 
 
 def _compute_social_engagement_score(social_metrics):

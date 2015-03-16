@@ -26,6 +26,8 @@ from course_groups.cohorts import is_commentable_cohorted, add_cohort, add_user_
 from edx_notifications.lib.consumer import get_notifications_for_user, get_notifications_count_for_user
 from edx_notifications.startup import initialize  as initialize_notifications
 
+from social_engagement.models import StudentSocialEngagementScore
+
 log = logging.getLogger(__name__)
 
 CS_PREFIX = "http://localhost:4567/api/v1"
@@ -41,6 +43,7 @@ class MockRequestSetupMixin(object):
 
 @override_settings(MODULESTORE=TEST_DATA_MIXED_MODULESTORE)
 @patch('lms.lib.comment_client.utils.requests.request')
+@patch.dict("django.conf.settings.FEATURES", {"ENABLE_SOCIAL_ENGAGEMENT": False})
 class ViewsTestCase(UrlResetMixin, ModuleStoreTestCase, MockRequestSetupMixin):
 
     @patch.dict("django.conf.settings.FEATURES", {"ENABLE_DISCUSSION_SERVICE": True})
@@ -141,6 +144,7 @@ class ViewsTestCase(UrlResetMixin, ModuleStoreTestCase, MockRequestSetupMixin):
 
 
     @patch.dict("django.conf.settings.FEATURES", {"ENABLE_NOTIFICATIONS": True})
+    @patch.dict("django.conf.settings.FEATURES", {"ENABLE_SOCIAL_ENGAGEMENT": True})
     def test_create_cohorted_thread(self, mock_request):
         initialize_notifications()
 
@@ -197,14 +201,70 @@ class ViewsTestCase(UrlResetMixin, ModuleStoreTestCase, MockRequestSetupMixin):
             "anonymous": ["false"],
             "title": ["Hello"],
         }
-        url = reverse('create_thread', kwargs={'commentable_id': commentable_id,
-                                               'course_id': self.course_id.to_deprecated_string()})
-        response = self.client.post(url, data=thread)
-        assert_equal(response.status_code, 200)
 
-        # since the student is not yet part of the cohort
-        # he/she should not get a notification
+        # first assert that there is no engagement score
+        # for user
+
+        leaderboard_position = StudentSocialEngagementScore.get_user_leaderboard_position(
+            self.course.id,
+            self.student.id
+        )
+
+        # should be 10 points
+        self.assertEqual(
+            leaderboard_position['score'],
+            0
+        )
+
+        # should be in first place
+        self.assertEqual(
+            leaderboard_position['position'],
+            0
+        )
+
+        # no notifications so far
         assert_equal(get_notifications_count_for_user(self.student.id), 0)
+
+        # in order to test social engagement scoring, we have
+        # to mock out the social stats cs_comment_service
+        # API
+        with patch('social_engagement.engagement._get_user_social_stats') as mock_func:
+            mock_func.return_value = {
+                'num_threads': 1,
+                'num_comments': 0,
+                'num_replies': 0,
+                'num_upvotes': 0,
+                'num_thread_followers': 0,
+                'num_comments_generated': 0,
+            }
+
+            url = reverse('create_thread', kwargs={'commentable_id': commentable_id,
+                                                   'course_id': self.course_id.to_deprecated_string()})
+            response = self.client.post(url, data=thread)
+            assert_equal(response.status_code, 200)
+
+            # check social engagement score, it should be 10 points
+            # based on default scoring rules
+            leaderboard_position = StudentSocialEngagementScore.get_user_leaderboard_position(
+                self.course.id,
+                self.student.id
+            )
+
+            # should be 10 points
+            self.assertEqual(
+                leaderboard_position['score'],
+                10
+            )
+
+            # should be in first place
+            self.assertEqual(
+                leaderboard_position['position'],
+                1
+            )
+
+            # should have gotten one notification
+            # for leaderboard position change
+            assert_equal(get_notifications_count_for_user(self.student.id), 1)
 
         # create cohorts
         groupA = add_cohort(self.course.id, "CohortA")
@@ -264,13 +324,45 @@ class ViewsTestCase(UrlResetMixin, ModuleStoreTestCase, MockRequestSetupMixin):
             "comments_count": 0,
         })
 
-        url = reverse('create_thread', kwargs={'commentable_id': commentable_id,
-                                               'course_id': self.course_id.to_deprecated_string()})
-        response = self.client.post(url, data=thread)
-        assert_equal(response.status_code, 200)
+        with patch('social_engagement.engagement._get_user_social_stats') as mock_func:
+            mock_func.return_value = {
+                'num_threads': 2,
+                'num_comments': 0,
+                'num_replies': 0,
+                'num_upvotes': 0,
+                'num_thread_followers': 0,
+                'num_comments_generated': 0,
+            }
+
+            url = reverse('create_thread', kwargs={'commentable_id': commentable_id,
+                                                   'course_id': self.course_id.to_deprecated_string()})
+            response = self.client.post(url, data=thread)
+            assert_equal(response.status_code, 200)
+
+            # check social engagement score, it should be 20 points
+            # based on default scoring rules, since the user has
+            # created two threads
+            leaderboard_position = StudentSocialEngagementScore.get_user_leaderboard_position(
+                self.course.id,
+                self.student.id
+            )
+
+            # should be 10 points
+            self.assertEqual(
+                leaderboard_position['score'],
+                20
+            )
+
+            # should be in first place
+            self.assertEqual(
+                leaderboard_position['position'],
+                1
+            )
 
         # person who is in the cohort, but created the thread should not get a notification
-        assert_equal(get_notifications_count_for_user(self.student.id), 0)
+        # meaning they should just have one unread notification, which
+        # was due to position change
+        assert_equal(get_notifications_count_for_user(self.student.id), 1)
 
         # the person who is in the same cohort as the poster should get a notification
         assert_equal(get_notifications_count_for_user(a_user.id), 1)
@@ -747,6 +839,7 @@ class ViewsTestCase(UrlResetMixin, ModuleStoreTestCase, MockRequestSetupMixin):
 
 @patch("lms.lib.comment_client.utils.requests.request")
 @override_settings(MODULESTORE=TEST_DATA_MIXED_MODULESTORE)
+@patch.dict("django.conf.settings.FEATURES", {"ENABLE_SOCIAL_ENGAGEMENT": False})
 class ViewPermissionsTestCase(UrlResetMixin, ModuleStoreTestCase, MockRequestSetupMixin):
     @patch.dict("django.conf.settings.FEATURES", {"ENABLE_DISCUSSION_SERVICE": True})
     def setUp(self):
@@ -841,6 +934,7 @@ class ViewPermissionsTestCase(UrlResetMixin, ModuleStoreTestCase, MockRequestSet
 
 
 @override_settings(MODULESTORE=TEST_DATA_MIXED_MODULESTORE)
+@patch.dict("django.conf.settings.FEATURES", {"ENABLE_SOCIAL_ENGAGEMENT": False})
 class CreateThreadUnicodeTestCase(ModuleStoreTestCase, UnicodeTestMixin, MockRequestSetupMixin):
     def setUp(self):
         self.course = CourseFactory.create()
@@ -863,6 +957,7 @@ class CreateThreadUnicodeTestCase(ModuleStoreTestCase, UnicodeTestMixin, MockReq
 
 
 @override_settings(MODULESTORE=TEST_DATA_MIXED_MODULESTORE)
+@patch.dict("django.conf.settings.FEATURES", {"ENABLE_SOCIAL_ENGAGEMENT": False})
 class UpdateThreadUnicodeTestCase(ModuleStoreTestCase, UnicodeTestMixin, MockRequestSetupMixin):
     def setUp(self):
         self.course = CourseFactory.create()
@@ -888,6 +983,7 @@ class UpdateThreadUnicodeTestCase(ModuleStoreTestCase, UnicodeTestMixin, MockReq
 
 
 @override_settings(MODULESTORE=TEST_DATA_MIXED_MODULESTORE)
+@patch.dict("django.conf.settings.FEATURES", {"ENABLE_SOCIAL_ENGAGEMENT": False})
 class CreateCommentUnicodeTestCase(ModuleStoreTestCase, UnicodeTestMixin, MockRequestSetupMixin):
     def setUp(self):
         self.course = CourseFactory.create()
@@ -912,6 +1008,7 @@ class CreateCommentUnicodeTestCase(ModuleStoreTestCase, UnicodeTestMixin, MockRe
 
 
 @override_settings(MODULESTORE=TEST_DATA_MIXED_MODULESTORE)
+@patch.dict("django.conf.settings.FEATURES", {"ENABLE_SOCIAL_ENGAGEMENT": False})
 class UpdateCommentUnicodeTestCase(ModuleStoreTestCase, UnicodeTestMixin, MockRequestSetupMixin):
     def setUp(self):
         self.course = CourseFactory.create()
@@ -936,6 +1033,7 @@ class UpdateCommentUnicodeTestCase(ModuleStoreTestCase, UnicodeTestMixin, MockRe
 
 
 @override_settings(MODULESTORE=TEST_DATA_MIXED_MODULESTORE)
+@patch.dict("django.conf.settings.FEATURES", {"ENABLE_SOCIAL_ENGAGEMENT": False})
 class CreateSubCommentUnicodeTestCase(ModuleStoreTestCase, UnicodeTestMixin, MockRequestSetupMixin):
     def setUp(self):
         self.course = CourseFactory.create()
@@ -961,6 +1059,7 @@ class CreateSubCommentUnicodeTestCase(ModuleStoreTestCase, UnicodeTestMixin, Moc
 
 
 @override_settings(MODULESTORE=TEST_DATA_MIXED_MODULESTORE)
+@patch.dict("django.conf.settings.FEATURES", {"ENABLE_SOCIAL_ENGAGEMENT": False})
 class UsersEndpointTestCase(ModuleStoreTestCase, MockRequestSetupMixin):
 
     def set_post_counts(self, mock_request, threads_count=1, comments_count=1):

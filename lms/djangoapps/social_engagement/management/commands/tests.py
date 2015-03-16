@@ -29,6 +29,7 @@ from .generate_engagement_entries import Command
 
 @override_settings(MODULESTORE=TEST_DATA_MIXED_MODULESTORE)
 @patch.dict(settings.FEATURES, {'ENABLE_NOTIFICATIONS': True})
+@patch.dict(settings.FEATURES, {'ENABLE_SOCIAL_ENGAGEMENT': True})
 class StudentEngagementTests(TestCase):
     """ Test suite for CourseModuleCompletion """
 

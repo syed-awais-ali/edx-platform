@@ -313,6 +313,10 @@ FEATURES = {
 
     # Whether edx-notifications should use Celery for bulk operations
     'ENABLE_NOTIFICATIONS_CELERY': False,
+
+    # whether to turn on Social Engagment scoring
+    # driven through the comment service
+    'ENABLE_SOCIAL_ENGAGEMENT': False,
 }
 
 # Ignore static asset files on import which match this pattern
