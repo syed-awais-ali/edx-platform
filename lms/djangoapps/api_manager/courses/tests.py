@@ -121,83 +121,83 @@ class CoursesApiTests(TestCase):
             parent_location=self.course.location,
             data=self.test_data,
             due=self.course_end_date,
-            display_name="Overview"
+            display_name=u"☃Overview"
         )
 
         self.course_project = ItemFactory.create(
             category="chapter",
             parent_location=self.course.location,
             data=self.test_data,
-            display_name="Group Project"
+            display_name=u"☃Group Project"
         )
 
         self.course_project2 = ItemFactory.create(
             category="chapter",
             parent_location=self.course.location,
             data=self.test_data,
-            display_name="Group Project2"
+            display_name=u"☃Group Project2"
         )
 
         self.course_content = ItemFactory.create(
             category="videosequence",
             parent_location=self.chapter.location,
             data=self.test_data,
-            display_name="Video_Sequence"
+            display_name=u"☃Video_Sequence"
         )
 
         self.content_child = ItemFactory.create(
             category="video",
             parent_location=self.course_content.location,
             data=self.test_data,
-            display_name="Video_Resources"
+            display_name=u"☃Video_Resources"
         )
 
         self.overview = ItemFactory.create(
             category="about",
             parent_location=self.course.location,
             data=TEST_COURSE_OVERVIEW_CONTENT,
-            display_name="overview"
+            display_name=u"☃overview"
         )
 
         self.updates = ItemFactory.create(
             category="course_info",
             parent_location=self.course.location,
             data=TEST_COURSE_UPDATES_CONTENT,
-            display_name="updates"
+            display_name=u"☃updates"
         )
 
         self.static_tab1 = ItemFactory.create(
             category="static_tab",
             parent_location=self.course.location,
             data=TEST_STATIC_TAB1_CONTENT,
-            display_name="syllabus"
+            display_name=u"☃syllabus"
         )
 
         self.static_tab2 = ItemFactory.create(
             category="static_tab",
             parent_location=self.course.location,
             data=TEST_STATIC_TAB2_CONTENT,
-            display_name="readings"
+            display_name=u"☃readings"
         )
 
         self.sub_section = ItemFactory.create(
             parent_location=self.chapter.location,
             category="sequential",
-            display_name=u"test subsection",
+            display_name=u"☃test subsection",
         )
 
         self.unit = ItemFactory.create(
             parent_location=self.sub_section.location,
             category="vertical",
             metadata={'graded': True, 'format': 'Homework'},
-            display_name=u"test unit",
+            display_name=u"☃test unit",
         )
 
         self.dash_unit = ItemFactory.create(
             parent_location=self.sub_section.location,
             category="vertical-with-dash",
             metadata={'graded': True, 'format': 'Homework'},
-            display_name=u"test unit 2",
+            display_name=u"☃test unit 2",
         )
 
         self.empty_course = CourseFactory.create(
@@ -727,7 +727,7 @@ class CoursesApiTests(TestCase):
             category="about",
             parent_location=test_course.location,
             data='',
-            display_name="overview"
+            display_name=u"☃overview"
         )
         response = self.do_get(test_uri)
         self.assertEqual(response.status_code, 404)
@@ -770,7 +770,7 @@ class CoursesApiTests(TestCase):
             category="course_info",
             parent_location=test_course.location,
             data='',
-            display_name="updates"
+            display_name=u"☃updates"
         )
         test_uri = '{}/{}/updates'.format(self.base_courses_uri, unicode(test_course.id))
         response = self.do_get(test_uri)
@@ -783,7 +783,7 @@ class CoursesApiTests(TestCase):
             category="course_info",
             parent_location=test_course.location,
             data=TEST_COURSE_UPDATES_CONTENT_LEGACY,
-            display_name="updates"
+            display_name=u"☃updates"
         )
         test_uri = self.base_courses_uri + '/' + unicode(test_course.id) + '/updates'
         response = self.do_get(test_uri)
@@ -874,7 +874,7 @@ class CoursesApiTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_courses_users_list_get_no_students(self):
-        course = CourseFactory.create(display_name="TEST COURSE", org='TESTORG')
+        course = CourseFactory.create(display_name=u"☃TEST COURSE", org='TESTORG')
         test_uri = self.base_courses_uri + '/' + unicode(course.id) + '/users'
         response = self.do_get(test_uri)
         self.assertEqual(response.status_code, 200)
@@ -905,7 +905,7 @@ class CoursesApiTests(TestCase):
         self.assertGreater(len(response.data), 0)
 
     def test_courses_users_list_post_nonexisting_user_allow(self):
-        course = CourseFactory.create(display_name="TEST COURSE", org='TESTORG2')
+        course = CourseFactory.create(display_name=u"☃TEST COURSE", org='TESTORG2')
         test_uri = self.base_courses_uri + '/' + unicode(course.id) + '/users'
         post_data = {}
         post_data['email'] = 'test+pending@tester.com'
@@ -1628,7 +1628,7 @@ class CoursesApiTests(TestCase):
             parent_location=self.chapter.location,
             category='mentoring',
             data=StringResponseXMLFactory().build_xml(answer='foo'),
-            display_name=u"test problem same points",
+            display_name=u"☃test problem same points",
             metadata={'rerandomize': 'always', 'graded': True, 'format': "Midterm Exam"}
         )
 
@@ -1748,19 +1748,19 @@ class CoursesApiTests(TestCase):
             parent_location=course.location,
             data=self.test_data,
             due=datetime(2014, 5, 16, 14, 30),
-            display_name="Overview"
+            display_name=u"☃Overview"
         )
 
         sub_section = ItemFactory.create(
             parent_location=chapter.location,
             category="sequential",
-            display_name=u"test subsection",
+            display_name=u"☃test subsection",
         )
         unit = ItemFactory.create(
             parent_location=sub_section.location,
             category="vertical",
             metadata={'graded': True, 'format': 'Homework'},
-            display_name=u"test unit",
+            display_name=u"☃test unit",
         )
 
         # create 5 users
@@ -2042,19 +2042,19 @@ class CoursesApiTests(TestCase):
             parent_location=course.location,
             data=self.test_data,
             due=self.course_end_date,
-            display_name=u"3033 Overview"
+            display_name=u"☃3033 Overview"
         )
 
         sub_section = ItemFactory.create(
             parent_location=chapter.location,
             category="sequential",
-            display_name="3033 test subsection",
+            display_name=u"☃3033 test subsection",
         )
         unit = ItemFactory.create(
             parent_location=sub_section.location,
             category="vertical",
             metadata={'graded': True, 'format': 'Homework'},
-            display_name=u"3033 test unit",
+            display_name=u"☃3033 test unit",
         )
 
         item = ItemFactory.create(
