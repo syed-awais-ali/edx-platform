@@ -184,7 +184,8 @@ def create_thread(request, course_id, commentable_id):
             request.user,
             excerpt=_get_excerpt(thread.body),
             recipient_group_id=thread.get('group_id'),
-            recipient_exclude_user_ids=[request.user.id]
+            recipient_exclude_user_ids=[request.user.id],
+            is_anonymous_user=anonymous
         )
 
     # call into the social_engagement django app to
@@ -208,6 +209,7 @@ def _send_discussion_notification(
     recipient_group_id=None,
     recipient_exclude_user_ids=None,
     extra_payload=None,
+    is_anonymous_user=False
 ):
     """
     Helper method to consolidate Notification trigger workflow
@@ -217,6 +219,12 @@ def _send_discussion_notification(
         if not settings.FEATURES.get("ENABLE_NOTIFICATIONS", False):
             return
 
+
+        if is_anonymous_user:
+            action_username = _('An anonymous user')
+        else:
+            action_username = request_user.username
+
         # get the notification type.
         msg = NotificationMessage(
             msg_type=get_notification_type(type_name),
@@ -224,7 +232,7 @@ def _send_discussion_notification(
             # base payload, other values will be passed in as extra_payload
             payload={
                 '_schema_version': '1',
-                'action_username': request_user.username,
+                'action_username': action_username,
                 'thread_title': thread.title,
             }
         )
@@ -424,7 +432,8 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
                 request.user,
                 excerpt=_get_excerpt(comment.body),
                 recipient_group_id=thread.get('group_id'),
-                recipient_exclude_user_ids=[request.user.id]
+                recipient_exclude_user_ids=[request.user.id],
+                is_anonymous_user=anonymous
             )
 
         elif parent_id is None and action_user_id != replying_to_id:
@@ -441,7 +450,8 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
                 thread,
                 request.user,
                 excerpt=_get_excerpt(comment.body),
-                recipient_user_id=replying_to_id
+                recipient_user_id=replying_to_id,
+                is_anonymous_user=anonymous
             )
 
     if request.is_ajax():
