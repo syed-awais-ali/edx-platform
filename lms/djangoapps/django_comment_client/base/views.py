@@ -596,7 +596,7 @@ def vote_for_comment(request, course_id, comment_id, value):
                 request.user,
                 recipient_user_id=original_poster_id,
                 extra_payload={
-                    'num_upvotes': thread.votes['up_count'],
+                    'num_upvotes': comment.votes['up_count'],
                 }
             )
 
