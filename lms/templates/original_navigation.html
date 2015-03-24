@@ -79,6 +79,19 @@ site_status_msg = get_site_status_msg(course_id)
         </ul>
       </li>
     </ol>
+
+    % if course and edx_notification_widget:
+<script type="text/javascript" src="/static/edx_notifications/js/vendor/dev/date.js"></script>
+    <link href='http://fonts.googleapis.com/css?family=Lato:100,300,400,700,900,300italic,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="/static/css/vendor/edx_notifications.css">
+      <div>
+          <img class="xns-icon" src="/static/edx_notifications/img/notification_icon.jpg" />
+          <span class='xns-counter'></span>
+      </div>
+      <div class="xns-pane"></div>
+
+      ${edx_notification_widget}
+    % endif
       % if display_shopping_cart: # see shoppingcart.context_processor.user_has_cart_context_processor
         <ol class="user">
           <li class="primary">

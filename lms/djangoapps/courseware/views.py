@@ -53,6 +53,10 @@ from microsite_configuration import microsite
 from opaque_keys.edx.locations import SlashSeparatedCourseKey
 from instructor.enrollment import uses_shib
 
+from edx_notifications.server.web.utils import get_notifications_widget_context
+
+from django.template.loader import render_to_string as django_render_to_string
+
 log = logging.getLogger("edx.courseware")
 
 template_imports = {'urllib': urllib}
@@ -450,6 +454,26 @@ def index(request, course_id, chapter=None, section=None,
                     'prev_section_url': prev_section_url
                 }
             ))
+
+        # call to the helper method to build up all the context we need
+        # to render the "notification_widget" that is embedded in our
+        # test page
+        context_dict = get_notifications_widget_context({
+            'STATIC_URL': '/static/',
+            'global_variables': {
+                'hide_link_is_visible': True,
+                'always_show_dates_on_unread': True,
+            },
+            'refresh_watcher': {
+                'name': 'short-poll',
+                'args': {
+                    'poll_period_secs': 10,
+                },
+            },
+            'namespace': course_key.to_deprecated_string(),
+        })
+
+        context['edx_notification_widget'] = django_render_to_string('django/notifications_widget.html', context_dict)
 
         result = render_to_response('courseware/courseware.html', context)
     except Exception as e:
