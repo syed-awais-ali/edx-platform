@@ -185,7 +185,7 @@ def create_thread(request, course_id, commentable_id):
             excerpt=_get_excerpt(thread.body),
             recipient_group_id=thread.get('group_id'),
             recipient_exclude_user_ids=[request.user.id],
-            is_anonymous_user=anonymous
+            is_anonymous_user=anonymous or anonymous_to_peers
         )
 
     # call into the social_engagement django app to
@@ -433,7 +433,7 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
                 excerpt=_get_excerpt(comment.body),
                 recipient_group_id=thread.get('group_id'),
                 recipient_exclude_user_ids=[request.user.id],
-                is_anonymous_user=anonymous
+                is_anonymous_user=anonymous or anonymous_to_peers
             )
 
         elif parent_id is None and action_user_id != replying_to_id:
@@ -451,7 +451,7 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
                 request.user,
                 excerpt=_get_excerpt(comment.body),
                 recipient_user_id=replying_to_id,
-                is_anonymous_user=anonymous
+                is_anonymous_user=anonymous or anonymous_to_peers
             )
 
     if request.is_ajax():
