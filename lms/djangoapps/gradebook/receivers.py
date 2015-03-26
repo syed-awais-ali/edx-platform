@@ -1,6 +1,8 @@
 """
 Signal handlers supporting various gradebook use cases
 """
+import logging
+import sys
 from django.dispatch import receiver
 from django.conf import settings
 from django.db.models.signals import post_save, pre_save
@@ -19,6 +21,8 @@ from edx_notifications.lib.publisher import (
     get_notification_type
 )
 from edx_notifications.data import NotificationMessage
+
+log = logging.getLogger(__name__)
 
 
 @receiver(score_changed)
@@ -98,9 +102,11 @@ def handle_studentgradebook_post_save_signal(sender, instance, **kwargs):
         leaderboard_rank = data['user_position']
         grade = data['user_grade']
 
-        if grade > 0.0 and leaderboard_rank <= getattr(settings, 'LEADERBOARD_SIZE', 3):
-            # We are in the leaderboard, so see if our rank changed
-            if leaderboard_rank != instance.presave_leaderboard_rank:
+        # logic for Notification trigger is when a user enters into the Leaderboard
+        if grade > 0.0:
+            leaderboard_size = getattr(settings, 'LEADERBOARD_SIZE', 3)
+            presave_leaderboard_rank = instance.presave_leaderboard_rank if instance.presave_leaderboard_rank else sys.maxint
+            if leaderboard_rank <= leaderboard_size and presave_leaderboard_rank > leaderboard_size:
                 try:
                     notification_msg = NotificationMessage(
                         msg_type=get_notification_type(u'open-edx.lms.leaderboard.gradebook.rank-changed'),

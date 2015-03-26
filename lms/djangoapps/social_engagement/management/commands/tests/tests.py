@@ -24,7 +24,7 @@ from social_engagement.engagement import update_all_courses_engagement_scores
 from edx_notifications.startup import initialize as initialize_notifications
 from edx_notifications.lib.consumer import get_notifications_count_for_user
 
-from .generate_engagement_entries import Command
+from social_engagement.management.commands.generate_engagement_entries import Command
 
 
 @override_settings(MODULESTORE=TEST_DATA_MIXED_MODULESTORE)
