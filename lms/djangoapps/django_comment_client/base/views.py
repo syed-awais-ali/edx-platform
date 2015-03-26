@@ -430,7 +430,7 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
                 unicode(course_key),
                 thread,
                 request.user,
-                excerpt=_get_excerpt(comment.body),
+                excerpt=_get_excerpt(post["body"]),
                 recipient_group_id=thread.get('group_id'),
                 recipient_exclude_user_ids=[request.user.id],
                 is_anonymous_user=anonymous or anonymous_to_peers
@@ -449,7 +449,7 @@ def _create_comment(request, course_key, thread_id=None, parent_id=None):
                 unicode(course_key),
                 thread,
                 request.user,
-                excerpt=_get_excerpt(comment.body),
+                excerpt=_get_excerpt(post["body"]),
                 recipient_user_id=replying_to_id,
                 is_anonymous_user=anonymous or anonymous_to_peers
             )
