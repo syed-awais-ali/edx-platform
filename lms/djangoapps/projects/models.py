@@ -26,6 +26,18 @@ class Project(TimeStampedModel):
         """ Meta class for defining additional model characteristics """
         unique_together = ("course_id", "content_id", "organization")
 
+    @classmethod
+    def get_user_ids_in_project_by_content_id(cls, content_id):
+        """
+        Returns a database cursor for all users associated with a project
+        specified by a content_id
+        """
+
+        query = Project.objects.select_related('workgroups__users').values_list('workgroups__users', flat=True).filter(
+            content_id=content_id
+        )
+
+        return query
 
 class Workgroup(TimeStampedModel):
     """
