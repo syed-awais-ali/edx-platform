@@ -27,13 +27,14 @@ class Project(TimeStampedModel):
         unique_together = ("course_id", "content_id", "organization")
 
     @classmethod
-    def get_user_ids_in_project_by_content_id(cls, content_id):
+    def get_user_ids_in_project_by_content_id(cls, course_id, content_id):
         """
         Returns a database cursor for all users associated with a project
         specified by a content_id
         """
 
         query = Project.objects.select_related('workgroups__users').values_list('workgroups__users', flat=True).filter(
+            course_id=course_id,
             content_id=content_id
         )
 

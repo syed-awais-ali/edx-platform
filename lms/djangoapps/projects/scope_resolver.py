@@ -7,6 +7,10 @@ import logging
 from edx_notifications.scopes import NotificationUserScopeResolver
 from projects.models import Project
 
+from opaque_keys.edx.keys import CourseKey
+from opaque_keys import InvalidKeyError
+from opaque_keys.edx.locations import SlashSeparatedCourseKey
+
 log = logging.getLogger(__name__)
 
 
@@ -32,10 +36,10 @@ class GroupProjectParticipantsScopeResolver(NotificationUserScopeResolver):
             # we can't resolve any other scopes
             return None
 
-        if 'content_id' not in scope_context:
-            # did not receive expected parameters
+        content_id = scope_context.get('content_id')
+        course_id = scope_context.get('course_id')
+
+        if not content_id or not course_id:
             return None
 
-        content_id = scope_context['content_id']
-
-        return Project.get_user_ids_in_project_by_content_id(content_id)
+        return Project.get_user_ids_in_project_by_content_id(course_id, content_id)

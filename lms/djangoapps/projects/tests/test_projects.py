@@ -196,8 +196,10 @@ class ProjectsApiTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_get_user_ids(self):
-
-        cursor = Project.get_user_ids_in_project_by_content_id(self.test_course_content_id)
+        cursor = Project.get_user_ids_in_project_by_content_id(
+            self.test_course_id,
+            self.test_course_content_id
+        )
 
         user_ids = [user_id for user_id in cursor.all()]
 
@@ -208,7 +210,10 @@ class ProjectsApiTests(TestCase):
     def test_scope_resolver(self):
         cursor = GroupProjectParticipantsScopeResolver().resolve(
             'group_project_participants',
-            {'content_id': self.test_course_content_id},
+            {
+                'course_id': self.test_course_id,
+                'content_id': self.test_course_content_id
+            },
             None
         )
 
