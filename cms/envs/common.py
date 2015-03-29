@@ -786,3 +786,8 @@ NOTIFICATION_CHANNEL_PROVIDER_TYPE_MAPS = {
     'open-edx.studio.announcements.course-start-announcement': 'mobile-push',
     '*': 'durable',  # default global mapping
 }
+
+PUSH_NOTIFICATIONS_SETTINGS = {
+        "APNS_CERTIFICATE": "/edx/app/edxapp/edx-platform/apns.pem",
+        "APNS_HOST": "gateway.sandbox.push.apple.com",
+}
