@@ -2,7 +2,10 @@ import re
 import logging
 import datetime
 import json
+from datetime import timedelta
 from json.encoder import JSONEncoder
+
+from django.conf import settings
 
 from opaque_keys.edx.locations import Location
 from xmodule.modulestore.exceptions import ItemNotFoundError
@@ -10,6 +13,11 @@ from contentstore.utils import course_image_url
 from models.settings import course_grading
 from xmodule.fields import Date
 from xmodule.modulestore.django import modulestore
+
+from edx_notifications.data import NotificationMessage
+from edx_notifications.lib.publisher import get_notification_type, publish_timed_notification
+from edx_notifications.timer import poll_and_execute_timers
+
 
 class CourseDetails(object):
     def __init__(self, org, course_id, run):
@@ -122,6 +130,39 @@ class CourseDetails(object):
         if converted != descriptor.start:
             dirty = True
             descriptor.start = converted
+
+            # For POC on scheduling a notification on course start
+            # this is probably not the right place for it
+            notification_type = get_notification_type(u'open-edx.studio.announcements.course-start-announcement')
+            notification_msg = NotificationMessage(
+                msg_type=notification_type,
+                namespace=unicode(course_key),
+                payload={
+                    '_schema_version': '1',
+                    'course_name': descriptor.display_name,
+                    'start_date': descriptor.start.strftime('%-m/%-d/%-y'),
+                }
+            )
+
+            # schedule a notification to go out 3 days prior
+            publish_timed_notification(
+                msg=notification_msg,
+                # send reminder that course starts 3 days in advance
+                send_at=descriptor.start - timedelta(days=3),
+                # send to all students participating in this project
+                scope_name='course_enrollments',
+                scope_context={
+                    'course_id': unicode(course_key),
+                },
+                timer_name='{course_key}:course-start-announcement'.format(course_key=unicode(course_key)),
+                ignore_if_past_due=False
+            )
+
+            # we wouldn't do this in a real setting since we have
+            # a background process executing timer tasks. But for demo
+            # purposes, let's fire any timers ready to go
+            poll_and_execute_timers()
+
 
         if 'end_date' in jsondict:
             converted = date.from_json(jsondict['end_date'])

@@ -771,6 +771,10 @@ NOTIFICATION_CHANNEL_PROVIDERS = {
             }
         }
     },
+    'mobile-push': {
+        'class': 'edx_notifications.channels.mobile.MobilePushNotificationChannelProvider',
+        'options': {},
+    },
     'null': {
         'class': 'edx_notifications.channels.null.NullNotificationChannel',
         'options': {}
@@ -779,5 +783,6 @@ NOTIFICATION_CHANNEL_PROVIDERS = {
 
 # list all of the mappings of notification types to channel
 NOTIFICATION_CHANNEL_PROVIDER_TYPE_MAPS = {
+    'open-edx.studio.announcements.course-start-announcement': 'mobile-push',
     '*': 'durable',  # default global mapping
 }
