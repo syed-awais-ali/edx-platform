@@ -155,6 +155,8 @@ class CourseDetails(object):
                     'course_id': unicode(course_key),
                 },
                 timer_name='{course_key}:course-start-announcement'.format(course_key=unicode(course_key)),
+                # for demo purposes we always want the notification to go out even
+                # if it is past due
                 ignore_if_past_due=False
             )
 
