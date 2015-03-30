@@ -76,6 +76,19 @@ class Workgroup(TimeStampedModel):
         workgroup_user = WorkgroupUser.objects.get(workgroup=self, user=user)
         workgroup_user.delete()
 
+    @classmethod
+    def get_user_ids_in_workgroup(cls, workgroup_id):
+        """
+        Returns a database cursor for all users associated with a project
+        specified by a content_id
+        """
+
+        query = Workgroup.objects.select_related('users').values_list('users', flat=True).filter(
+            id=workgroup_id
+        )
+
+        return query
+
 
 class WorkgroupUser(models.Model):
     """A Folder to store some data between a client and its insurance"""

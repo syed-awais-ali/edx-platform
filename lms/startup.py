@@ -168,6 +168,7 @@ def startup_notification_subsystem():
         register_user_scope_resolver('course_enrollments', CourseEnrollmentsScopeResolver())
         register_user_scope_resolver('course_group', CourseGroupScopeResolver())
         register_user_scope_resolver('group_project_participants', GroupProjectParticipantsScopeResolver())
+        register_user_scope_resolver('group_project_workgroup', GroupProjectParticipantsScopeResolver())
     except Exception, ex:
         # Note this will fail when we try to run migrations as manage.py will call startup.py
         # and startup.initialze() will try to manipulate some database tables.

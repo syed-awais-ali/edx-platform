@@ -207,6 +207,17 @@ class ProjectsApiTests(TestCase):
         self.assertIn(self.test_user.id, user_ids)
         self.assertIn(self.test_user2.id, user_ids)
 
+    def test_get_workgroup_user_ids(self):
+        cursor = Workgroup.get_user_ids_in_workgroup(self.test_workgroup.id)
+        user_ids = [user_id for user_id in cursor.all()]
+        self.assertEqual(len(user_ids), 1)
+        self.assertIn(self.test_user.id, user_ids)
+
+        cursor = Workgroup.get_user_ids_in_workgroup(self.test_workgroup2.id)
+        user_ids = [user_id for user_id in cursor.all()]
+        self.assertEqual(len(user_ids), 1)
+        self.assertIn(self.test_user2.id, user_ids)
+
     def test_scope_resolver(self):
         cursor = GroupProjectParticipantsScopeResolver().resolve(
             'group_project_participants',
@@ -222,3 +233,31 @@ class ProjectsApiTests(TestCase):
         self.assertEqual(len(user_ids), 2)
         self.assertIn(self.test_user.id, user_ids)
         self.assertIn(self.test_user2.id, user_ids)
+
+    def test_workgroup_scope_resolver(self):
+        cursor = GroupProjectParticipantsScopeResolver().resolve(
+            'group_project_workgroup',
+            {
+                'workgroup_id': self.test_workgroup.id,
+            },
+            None
+        )
+
+        user_ids = [user_id for user_id in cursor.all()]
+
+        self.assertEqual(len(user_ids), 1)
+        self.assertIn(self.test_user.id, user_ids)
+
+        cursor = GroupProjectParticipantsScopeResolver().resolve(
+            'group_project_workgroup',
+            {
+                'workgroup_id': self.test_workgroup2.id,
+            },
+            None
+        )
+
+        user_ids = [user_id for user_id in cursor.all()]
+
+        self.assertEqual(len(user_ids), 1)
+        self.assertIn(self.test_user2.id, user_ids)
+
