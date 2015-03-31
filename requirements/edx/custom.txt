@@ -10,4 +10,4 @@
 -e git+https://github.com/edx-solutions/xblock-adventure.git@30894de41ee7efe7d5b6400086463d12995893f7#egg=xblock-adventure
 -e git+https://github.com/mckinseyacademy/xblock-poll.git@ed6a2086f158a4b1a8b9219e5105d030fff5910a#egg=xblock-poll
 -e git+https://github.com/OfficeDev/xblock-officemix/@86238f5968a08db005717dbddc346808f1ed3716#egg=xblock_officemix-master
--e git+https://github.com/edx/edx-notifications.git@5a8bfee62a519b1c3a37380c097cff4201beb221#egg=edx-notifications
+-e git+https://github.com/edx/edx-notifications.git@0111e38a062b979931c04ce0e3e7ee3959dcad55#egg=edx-notifications
