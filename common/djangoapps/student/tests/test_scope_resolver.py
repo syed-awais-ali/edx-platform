@@ -7,7 +7,7 @@ from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase
 from xmodule.modulestore.tests.factories import CourseFactory
 
 from student.models import CourseEnrollment
-from student.scope_resolver import CourseEnrollmentsScopeResolver
+from student.scope_resolver import CourseEnrollmentsScopeResolver, StudentEmailScopeResolver
 
 
 class StudentTasksTestCase(ModuleStoreTestCase):
@@ -57,5 +57,31 @@ class StudentTasksTestCase(ModuleStoreTestCase):
 
         resolver = CourseEnrollmentsScopeResolver()
 
+        self.assertIsNone(resolver.resolve('bad', {'course_id': 'foo'}, None))
+        self.assertIsNone(resolver.resolve('course_enrollments', {'bad': 'foo'}, None))
+
+    def test_email_resolver(self):
+        """
+        Make sure we can resolve emails
+        """
+        test_user_1 = UserFactory.create(password='test_pass')
+
+        resolver = StudentEmailScopeResolver()
+
+        emails_resultset = resolver.resolve(
+            'student_email_resolver',
+            {
+                'user_id': test_user_1.id,
+            },
+            None
+        )
+
+        self.assertTrue(test_user_1.email in emails_resultset)
+
+    def test_bad_email_resolver(self):
+        """
+        Cover some error cases
+        """
+        resolver = StudentEmailScopeResolver()
         self.assertIsNone(resolver.resolve('bad', {'course_id': 'foo'}, None))
         self.assertIsNone(resolver.resolve('course_enrollments', {'bad': 'foo'}, None))

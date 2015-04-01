@@ -14,7 +14,7 @@ from monkey_patch import django_utils_translation
 import analytics
 
 from course_groups.scope_resolver import CourseGroupScopeResolver
-from student.scope_resolver import CourseEnrollmentsScopeResolver
+from student.scope_resolver import CourseEnrollmentsScopeResolver, StudentEmailScopeResolver
 from projects.scope_resolver import GroupProjectParticipantsScopeResolver
 from edx_notifications.scopes import register_user_scope_resolver
 
@@ -169,6 +169,7 @@ def startup_notification_subsystem():
         register_user_scope_resolver('course_group', CourseGroupScopeResolver())
         register_user_scope_resolver('group_project_participants', GroupProjectParticipantsScopeResolver())
         register_user_scope_resolver('group_project_workgroup', GroupProjectParticipantsScopeResolver())
+        register_user_scope_resolver('student_email_resolver', StudentEmailScopeResolver())
     except Exception, ex:
         # Note this will fail when we try to run migrations as manage.py will call startup.py
         # and startup.initialze() will try to manipulate some database tables.

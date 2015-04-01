@@ -6,6 +6,7 @@ import logging
 
 from edx_notifications.scopes import NotificationUserScopeResolver
 from student.models import CourseEnrollment
+from django.contrib.auth.models import User
 
 from opaque_keys.edx.keys import CourseKey
 from opaque_keys import InvalidKeyError
@@ -53,4 +54,28 @@ class CourseEnrollmentsScopeResolver(NotificationUserScopeResolver):
         return CourseEnrollment.objects.values_list('user_id', flat=True).filter(
             is_active=1,
             course_id=course_key
+        )
+
+
+class StudentEmailScopeResolver(NotificationUserScopeResolver):
+    """
+    Implementation of the NotificationUserScopeResolver to
+    take in a user_id and return that user's email address
+    """
+
+    def resolve(self, scope_name, scope_context, instance_context):
+        """
+        The entry point to resolve a scope_name with a given scope_context
+        """
+
+        if scope_name != 'student_email_resolver':
+            # we can't resolve any other scopes
+            return None
+
+        user_id = scope_context.get('user_id')
+        if not user_id:
+            return None
+
+        return User.objects.values_list('email', flat=True).filter(
+            id=user_id
         )
