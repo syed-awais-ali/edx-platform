@@ -115,11 +115,11 @@ class UsersApiTests(TestCase):
         self.course_start_date = timezone.now() + relativedelta(days=-1)
         self.course_end_date = timezone.now() + relativedelta(days=60)
         self.course = CourseFactory.create(
-            display_name="TEST COURSE",
+            display_name=u"☃TEST COURSE",
             start=self.course_start_date,
             end=self.course_end_date,
-            org='USERTEST',
-            run='USERTEST1'
+            org=u'☃USERTEST',
+            run=u'☃USERTEST1'
         )
         self.course_content = ItemFactory.create(
             category="videosequence",
@@ -128,7 +128,7 @@ class UsersApiTests(TestCase):
             due=self.course_end_date,
             display_name="View_Sequence"
         )
-        self.course2 = CourseFactory.create(display_name="TEST COURSE2", org='TESTORG2', run='USERTEST2')
+        self.course2 = CourseFactory.create(display_name=u"☃TEST COURSE2", org=u'☃TESTORG2', run=u'☃USERTEST2')
         self.course2_content = ItemFactory.create(
             category="videosequence",
             parent_location=self.course2.location,
@@ -201,14 +201,14 @@ class UsersApiTests(TestCase):
         # create a 25 new users
         for i in xrange(1, 26):
             data = {
-                'email': 'test{}@example.com'.format(i),
-                'username': 'test_user{}'.format(i),
+                'email': u'test{}@☃example.com'.format(i),
+                'username': u'☃test_user{}'.format(i),
                 'password': self.test_password,
-                'first_name': 'John{}'.format(i),
-                'last_name': 'Doe{}'.format(i),
-                'avatar_url': 'http://avatar.com/{}.jpg'.format(i),
-                'city': 'Boston',
-                'title': "The King",
+                'first_name': u'☃John{}'.format(i),
+                'last_name': u'☃Doe{}'.format(i),
+                'avatar_url': u'http://avatar☃.com/{}.jpg'.format(i),
+                'city': u'☃Boston',
+                'title': u"☃The King",
             }
 
             response = self.do_post(test_uri, data)
@@ -219,8 +219,8 @@ class UsersApiTests(TestCase):
         total_orgs = 30
         for i in xrange(0, total_orgs):
             data = {
-                'name': '{} {}'.format('Org', i),
-                'display_name': '{} {}'.format('Org display name', i),
+                'name': u'☃{} {}'.format('Org', i),
+                'display_name': u'☃{} {}'.format('Org display name', i),
                 'users': users
             }
             response = self.do_post(self.org_base_uri, data)
@@ -266,9 +266,9 @@ class UsersApiTests(TestCase):
         response = self.do_get('{}?email=test2@example.com&fields=avatar_url,city,title'.format(test_uri))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data['results']), 1)
-        self.assertEqual(response.data['results'][0]['avatar_url'], 'http://avatar.com/2.jpg')
-        self.assertEqual(response.data['results'][0]['city'], 'Boston')
-        self.assertEqual(response.data['results'][0]['title'], 'The King')
+        self.assertEqual(response.data['results'][0]['avatar_url'], u'http://avatar☃.com/2.jpg')
+        self.assertEqual(response.data['results'][0]['city'], u'☃Boston')
+        self.assertEqual(response.data['results'][0]['title'], u'☃The King')
         if 'id' in response.data['results'][0]:
             self.fail("Dynamic field filtering error in UserSerializer")
 
