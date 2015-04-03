@@ -71,4 +71,8 @@ def startup_notification_subsystem():
         # and startup.initialze() will try to manipulate some database tables.
         # We need to research how to identify when we are being started up as part of
         # a migration script
-        log.exception(ex)
+        log.error(
+            'There was a problem initializing notifications subsystem. '
+            'This could be because the database tables have not yet been created and '
+            './manage.py lms syncdb needs to run setup.py. Error was "{err_msg}". Continuing...'.format(err_msg=str(ex))
+        )
