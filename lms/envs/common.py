@@ -309,7 +309,7 @@ FEATURES = {
     'ORGANIZATIONS_APP': False,
 
     # Enable the edx-notifications subssytem
-    'ENABLE_NOTIFICATIONS': False,
+    'ENABLE_NOTIFICATIONS': True,
 
     # Whether edx-notifications should use Celery for bulk operations
     'ENABLE_NOTIFICATIONS_CELERY': False,
