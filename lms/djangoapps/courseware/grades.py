@@ -226,10 +226,11 @@ def _grade(student, request, course, keep_raw_scores):
 
                     graded = module_descriptor.graded
                     if not total > 0:
-                        #We simply cannot grade a problem that is 12/0, because we might need it as a percentage
+                        # We simply cannot grade a problem that is 12/0, because we might need it as a percentage
                         graded = False
 
-                    scores.append(Score(correct, total, graded, module_descriptor.display_name_with_default, section_due))
+                    scores.append(
+                        Score(correct, total, graded, module_descriptor.display_name_with_default, section_due))
 
                 _, graded_total = graders.aggregate_scores(scores, section_name)
                 if keep_raw_scores:
@@ -237,7 +238,7 @@ def _grade(student, request, course, keep_raw_scores):
             else:
                 graded_total = Score(0.0, 1.0, True, section_name, section_due)
 
-            #Add the graded total to totaled_scores
+            # Add the graded total to totaled_scores
             if graded_total.possible > 0:
                 format_scores.append(graded_total)
             else:
@@ -287,19 +288,19 @@ def grade_for_percentage(grade_cutoffs, percentage):
 
 
 @transaction.commit_manually
-def progress_summary(student, request, course):
+def progress_summary(student, request, course, for_api=False):
     """
     Wraps "_progress_summary" with the manual_transaction context manager just
     in case there are unanticipated errors.
     """
     with manual_transaction():
-        return _progress_summary(student, request, course)
+        return _progress_summary(student, request, course, for_api)
 
 
 # TODO: This method is not very good. It was written in the old course style and
 # then converted over and performance is not good. Once the progress page is redesigned
 # to not have the progress summary this method should be deleted (so it won't be copied).
-def _progress_summary(student, request, course):
+def _progress_summary(student, request, course, for_api=False):
     """
     Unwrapped version of "progress_summary".
 
@@ -362,7 +363,11 @@ def _progress_summary(student, request, course):
                     if correct is None and total is None:
                         continue
 
-                    scores.append(Score(correct, total, graded, module_descriptor.display_name_with_default, due))
+                    if for_api:
+                        description = unicode(module_descriptor.location)
+                    else:
+                        description = module_descriptor.display_name_with_default
+                    scores.append(Score(correct, total, graded, description, due))
 
                 scores.reverse()
                 section_total, _ = graders.aggregate_scores(
@@ -372,8 +377,8 @@ def _progress_summary(student, request, course):
                 sections.append({
                     'display_name': section_module.display_name_with_default,
                     'url_name': section_module.url_name,
-                    'scores': scores,
-                    'section_total': section_total,
+                    'scores': [score._asdict() for score in scores] if for_api else scores,
+                    'section_total': section_total._asdict() if for_api else section_total,
                     'format': module_format,
                     'due': get_extended_due_date(section_module),
                     'graded': graded,
@@ -574,7 +579,8 @@ def calculate_proforma_grade(grade_summary, grading_policy):
             if total_item_score:
                 category_average_score = total_item_score / items_considered
                 category_averages.append(category_average_score)
-                category_policy = next((policy for policy in grading_policy['GRADER'] if policy['type'] == category), None)
+                category_policy = next(
+                    (policy for policy in grading_policy['GRADER'] if policy['type'] == category), None)
                 category_weight = category_policy['weight']
                 category_grade = category_average_score * category_weight
                 proforma_grade += category_grade
