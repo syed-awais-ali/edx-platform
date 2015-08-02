@@ -1,6 +1,7 @@
 """ API implementation for user-oriented interactions. """
 
 import logging
+import json
 from requests.exceptions import ConnectionError
 
 from django.contrib.auth.models import Group
@@ -1001,19 +1002,21 @@ class UsersCoursesGradesDetail(SecureAPIView):
         if not course_descriptor:
             return Response({}, status=status.HTTP_404_NOT_FOUND)
 
-        progress_summary = grades.progress_summary(student, request, course_descriptor)  # pylint: disable=W0612
-        grade_summary = grades.grade(student, request, course_descriptor)
-        grading_policy = course_descriptor.grading_policy
-
         queryset = StudentGradebook.objects.filter(
             user=student,
             course_id__exact=course_key,
         )
         current_grade = 0
         proforma_grade = 0
+        progress_summary = {}
+        grade_summary = {}
+        grading_policy = {}
         if len(queryset):
             current_grade = queryset[0].grade
             proforma_grade = queryset[0].proforma_grade
+            progress_summary = json.loads(queryset[0].progress_summary)
+            grade_summary = json.loads(queryset[0].grade_summary)
+            grading_policy = json.loads(queryset[0].grading_policy)
 
         response_data = {
             'courseware_summary': progress_summary,
