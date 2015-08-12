@@ -39,6 +39,7 @@ def on_score_changed(sender, **kwargs):
     grade_data = grades.grade(user, request, course_descriptor)
     grade = grade_data['percent']
     proforma_grade = grades.calculate_proforma_grade(grade_data, course_descriptor.grading_policy)
+
     try:
         gradebook_entry = StudentGradebook.objects.get(user=user, course_id=course_key)
         if gradebook_entry.grade != grade:
