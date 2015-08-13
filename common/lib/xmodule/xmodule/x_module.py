@@ -1613,10 +1613,10 @@ class DiscussionService(object):
         request.user = user
         user_info = cc.User.from_django_user(self.runtime.user).to_dict()
         course_id = self.runtime.course_id
-        course = get_course_with_access(self.runtime.user, 'load_forum', course_id)
+        course = get_course_with_access(self.runtime.user, 'load', course_id, check_if_enrolled=True)
         user_cohort_id = get_cohort_id(user, course_id)
 
-        unsafethreads, query_params = get_threads(request, course_id)
+        unsafethreads, query_params = get_threads(request, course)
         threads = [utils.prepare_content(thread, course_id) for thread in unsafethreads]
         utils.add_courseware_context(threads, course, user)
 
@@ -1626,7 +1626,7 @@ class DiscussionService(object):
         annotated_content_info = utils.get_metadata_for_threads(course_id, threads, user, user_info)
         category_map = utils.get_discussion_category_map(course, user)
 
-        cohorts = get_course_cohorts(course_id)
+        cohorts = [{"id": str(g.id), "name": g.name} for g in get_course_cohorts(course)]
         cohorted_commentables = get_cohorted_commentables(course_id)
 
         course_settings = make_course_settings(course, user)
@@ -1674,7 +1674,7 @@ class DiscussionService(object):
         course_id = self.runtime.course_id
         user = self.runtime.user
 
-        course = get_course_with_access(user, 'load_forum', course_id)
+        course = get_course_with_access(user, 'load', course_id, check_if_enrolled=True)
         category_map = get_discussion_category_map(course, user)
 
         is_moderator = has_permission(user, "see_all_cohorts", course_id)

@@ -70,7 +70,9 @@ def get_accessible_discussion_modules(course, user, include_all=False):  # pylin
     Return a list of all valid discussion modules in this course that
     are accessible to the given user.
     """
-    all_modules = modulestore().get_items(course.id, qualifiers={'category': 'discussion'})
+    discussion_modules = modulestore().get_items(course.id, qualifiers={'category': 'discussion'})
+    discussion_xblocks = modulestore().get_items(course.id, qualifiers={'category': 'discussion-forum'})
+    all_modules = discussion_modules + discussion_xblocks
 
     def has_required_keys(module):
         for key in ('discussion_id', 'discussion_category', 'discussion_target'):
@@ -78,7 +80,6 @@ def get_accessible_discussion_modules(course, user, include_all=False):  # pylin
                 log.warning("Required key '%s' not in discussion %s, leaving out of category map" % (key, module.location))
                 return False
         return True
-
     return [
         module for module in all_modules
         if has_required_keys(module) and (include_all or has_access(user, 'load', module, course.id))
@@ -552,10 +553,10 @@ def get_group_id_for_comments_service(request, course_key, commentable_id=None):
         ValueError if the requested group_id is invalid
     """
     if commentable_id is None or is_commentable_cohorted(course_key, commentable_id):
-        if request.method == "GET":
-            requested_group_id = request.GET.get('group_id')
-        elif request.method == "POST":
+        if request.method == "POST":
             requested_group_id = request.POST.get('group_id')
+        else:
+            requested_group_id = request.GET.get('group_id')
         if has_permission(request.user, "see_all_cohorts", course_key):
             if not requested_group_id:
                 return None
