@@ -998,7 +998,7 @@ class UsersCoursesGradesDetail(SecureAPIView):
         if not course_descriptor:
             return Response({}, status=status.HTTP_404_NOT_FOUND)
 
-        progress_summary = grades.progress_summary(student, request, course_descriptor)  # pylint: disable=W0612
+        progress_summary = grades.progress_summary(student, request, course_descriptor, locators_as_strings=True)  # pylint: disable=W0612
         grade_summary = grades.grade(student, request, course_descriptor)
         grading_policy = course_descriptor.grading_policy
 
