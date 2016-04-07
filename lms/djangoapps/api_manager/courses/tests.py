@@ -29,11 +29,15 @@ from django_comment_common.models import Role, FORUM_ROLE_MODERATOR
 from gradebook.models import StudentGradebook
 from instructor.access import allow_access
 from student.tests.factories import UserFactory, CourseEnrollmentFactory
+from progress.tests import disconnect_cmc_post_save, connect_cmc_post_save
 from student.models import CourseEnrollment
+
 from xmodule.modulestore.tests.factories import CourseFactory, ItemFactory
 from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase, mixed_store_config
 from xmodule.modulestore import ModuleStoreEnum
 from api_manager.courseware_access import get_course_key
+from openedx.core.djangoapps.util.testing import SignalDisconnectTestMixin
+
 
 from .content import TEST_COURSE_OVERVIEW_CONTENT, TEST_COURSE_UPDATES_CONTENT, TEST_COURSE_UPDATES_CONTENT_LEGACY
 from .content import TEST_STATIC_TAB1_CONTENT, TEST_STATIC_TAB2_CONTENT
@@ -104,6 +108,7 @@ class CoursesApiTests(ModuleStoreTestCase):
 
     def setUp(self):
         super(CoursesApiTests, self).setUp()
+        connect_cmc_post_save()
         self.test_server_prefix = 'https://testserver'
         self.base_courses_uri = '/api/server/courses'
         self.base_groups_uri = '/api/server/groups'
@@ -287,6 +292,8 @@ class CoursesApiTests(ModuleStoreTestCase):
         Role.objects.get_or_create(
             name=FORUM_ROLE_MODERATOR,
             course_id=self.course.id)
+        self.addCleanup(disconnect_cmc_post_save)
+        self.addCleanup(SignalDisconnectTestMixin.disconnect_course_published_signals)
 
     def do_get(self, uri):
         """Submit an HTTP GET request"""
@@ -1937,71 +1944,80 @@ class CoursesApiTests(ModuleStoreTestCase):
             })
             self.assertEqual(response.status_code, 201)
 
-        expected_course_avg = '25.000'
-        test_uri = '{}?count=6'.format(leaders_uri)
-        response = self.do_get(test_uri)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['leaders']), 4)
-        self.assertEqual('{0:.3f}'.format(response.data['course_avg']), expected_course_avg)
+        with mock.patch(
+            'openedx.core.djangoapps.content.course_metadata.models.CourseAggregatedMetaData'
+        ) as CourseDataMock:  # pylint: disable=invalid-name
 
-        # without count filter and user_id
-        test_uri = '{}?user_id={}'.format(leaders_uri, users[1].id)
-        response = self.do_get(test_uri)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['leaders']), 4)
-        self.assertEqual(response.data['position'], 2)
-        self.assertEqual('{0:.3f}'.format(response.data['completions']), '28.000')
+            CourseDataMock.objects = mock.Mock()
+            mock_course_data = mock.Mock(total_assessments=25)
+            CourseDataMock.objects.get = mock.Mock()
+            CourseDataMock.objects.get.return_value = mock_course_data
 
-        # with skipleaders filter
-        test_uri = '{}?user_id={}&skipleaders=true'.format(leaders_uri, users[1].id)
-        response = self.do_get(test_uri)
-        self.assertEqual(response.status_code, 200)
-        self.assertIsNone(response.data.get('leaders', None))
-        self.assertEqual('{0:.3f}'.format(response.data['course_avg']), expected_course_avg)
-        self.assertEqual('{0:.3f}'.format(response.data['completions']), '28.000')
+            expected_course_avg = '25.000'
+            test_uri = '{}?count=6'.format(leaders_uri)
+            response = self.do_get(test_uri)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.data['leaders']), 4)
+            self.assertEqual('{0:.3f}'.format(response.data['course_avg']), expected_course_avg)
 
-        # test with bogus course
-        test_uri = '{}/{}/metrics/completions/leaders/'.format(self.base_courses_uri, self.test_bogus_course_id)
-        response = self.do_get(test_uri)
-        self.assertEqual(response.status_code, 404)
+            # without count filter and user_id
+            test_uri = '{}?user_id={}'.format(leaders_uri, users[1].id)
+            response = self.do_get(test_uri)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.data['leaders']), 4)
+            self.assertEqual(response.data['position'], 2)
+            self.assertEqual('{0:.3f}'.format(response.data['completions']), '28.000')
 
-        #filter course module completion by organization
-        data = {
-            'name': 'Test Organization',
-            'display_name': 'Test Org Display Name',
-            'users': [users[1].id]
-        }
-        response = self.do_post(self.base_organizations_uri, data)
-        self.assertEqual(response.status_code, 201)
-        test_uri = '{}?organizations={}'.format(leaders_uri, response.data['id'])
-        response = self.do_get(test_uri)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.data['leaders']), 1)
-        self.assertEqual(response.data['leaders'][0]['id'], users[1].id)
-        self.assertEqual('{0:.3f}'.format(response.data['leaders'][0]['completions']), '28.000')
-        self.assertEqual('{0:.3f}'.format(response.data['course_avg']), '28.000')
+            # with skipleaders filter
+            test_uri = '{}?user_id={}&skipleaders=true'.format(leaders_uri, users[1].id)
+            response = self.do_get(test_uri)
+            self.assertEqual(response.status_code, 200)
+            self.assertIsNone(response.data.get('leaders', None))
+            self.assertEqual('{0:.3f}'.format(response.data['course_avg']), expected_course_avg)
+            self.assertEqual('{0:.3f}'.format(response.data['completions']), '28.000')
 
-        # test with unknown user
-        test_uri = '{}?user_id={}&skipleaders=true'.format(leaders_uri, '909999')
-        response = self.do_get(test_uri)
-        self.assertEqual(response.status_code, 200)
-        self.assertIsNone(response.data.get('leaders', None))
-        self.assertEqual(response.data['position'], 0)
-        self.assertEqual(response.data['completions'], 0)
+            # test with bogus course
+            test_uri = '{}/{}/metrics/completions/leaders/'.format(self.base_courses_uri, self.test_bogus_course_id)
+            response = self.do_get(test_uri)
+            self.assertEqual(response.status_code, 404)
 
-        # test a case where completions are greater than total course modules. it should not be more than 100
-        contents.append(self.course_content)
-        for content in contents[2:]:
-            user_id = users[0].id
-            content_id = unicode(content.scope_ids.usage_id)
-            completions_data = {'content_id': content_id, 'user_id': user_id}
-            response = self.do_post(completion_uri, completions_data)
+            #filter course module completion by organization
+            data = {
+                'name': 'Test Organization',
+                'display_name': 'Test Org Display Name',
+                'users': [users[1].id]
+            }
+            response = self.do_post(self.base_organizations_uri, data)
             self.assertEqual(response.status_code, 201)
+            test_uri = '{}?organizations={}'.format(leaders_uri, response.data['id'])
+            response = self.do_get(test_uri)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.data['leaders']), 1)
+            self.assertEqual(response.data['leaders'][0]['id'], users[1].id)
+            self.assertEqual('{0:.3f}'.format(response.data['leaders'][0]['completions']), '28.000')
+            self.assertEqual('{0:.3f}'.format(response.data['course_avg']), '28.000')
 
-        test_uri = '{}?user_id={}'.format(leaders_uri, users[0].id)
-        response = self.do_get(test_uri)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual('{0:.3f}'.format(response.data['completions']), '100.000')
+            # test with unknown user
+            test_uri = '{}?user_id={}&skipleaders=true'.format(leaders_uri, '909999')
+            response = self.do_get(test_uri)
+            self.assertEqual(response.status_code, 200)
+            self.assertIsNone(response.data.get('leaders', None))
+            self.assertEqual(response.data['position'], 0)
+            self.assertEqual(response.data['completions'], 0)
+
+            # test a case where completions are greater than total course modules. it should not be more than 100
+            contents.append(self.course_content)
+            for content in contents[2:]:
+                user_id = users[0].id
+                content_id = unicode(content.scope_ids.usage_id)
+                completions_data = {'content_id': content_id, 'user_id': user_id}
+                response = self.do_post(completion_uri, completions_data)
+                self.assertEqual(response.status_code, 201)
+
+            test_uri = '{}?user_id={}'.format(leaders_uri, users[0].id)
+            response = self.do_get(test_uri)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual('{0:.3f}'.format(response.data['completions']), '100.000')
 
     def test_courses_metrics_grades_list_get(self):
         # Retrieve the list of grades for this course

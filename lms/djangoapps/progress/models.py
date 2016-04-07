@@ -20,6 +20,7 @@ class StudentProgress(models.Model):
     user = models.ForeignKey(User, db_index=True)
     course_id = CourseKeyField(db_index=True, max_length=255, blank=True)
     completions = models.IntegerField(default=0, db_index=True)
+    progress = models.DecimalField(default=0, max_digits=5, decimal_places=2)
     # We can't use TimeStampedModel here because those fields are not indexed.
     created = AutoCreatedField(_('created'))
     modified = AutoLastModifiedField(_('modified'), db_index=True)
@@ -120,6 +121,7 @@ class StudentProgressHistory(TimeStampedModel):
     user = models.ForeignKey(User, db_index=True)
     course_id = CourseKeyField(db_index=True, max_length=255, blank=True)
     completions = models.IntegerField()
+    progress = models.DecimalField(default=0, max_digits=5, decimal_places=2)
 
 
 class CourseModuleCompletion(TimeStampedModel):

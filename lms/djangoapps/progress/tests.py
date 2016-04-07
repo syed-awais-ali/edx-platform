@@ -15,6 +15,7 @@ from django.utils.timezone import UTC
 
 from django.test.utils import override_settings
 from django.conf import settings
+from django.db.models.signals import post_save
 
 from capa.tests.response_xml_factory import StringResponseXMLFactory
 
@@ -23,6 +24,7 @@ from courseware.tests.factories import StaffFactory
 from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase, mixed_store_config
 from xmodule.modulestore.tests.factories import CourseFactory, ItemFactory
 from progress.models import CourseModuleCompletion, StudentProgress, StudentProgressHistory
+from progress.signals import handle_cmc_post_save_signal
 from courseware.model_data import FieldDataCache
 from courseware import module_render
 from util.signals import course_deleted
@@ -56,10 +58,12 @@ class CourseModuleCompletionTests(ModuleStoreTestCase):
 
     def setUp(self):
         super(CourseModuleCompletionTests, self).setUp()
+        connect_cmc_post_save()
         self.user = UserFactory()
         self._create_course()
 
         initialize_notifications()
+        self.addCleanup(disconnect_cmc_post_save)
 
     def _create_course(self, start=None, end=None):
         self.course = CourseFactory.create(
@@ -80,11 +84,29 @@ class CourseModuleCompletionTests(ModuleStoreTestCase):
             data=test_data,
             display_name="Chapter 2"
         )
-        ItemFactory.create(
+        sub_section1 = ItemFactory.create(
             category="sequential",
             parent_location=chapter1.location,
             data=test_data,
             display_name="Sequence 1",
+        )
+        vertical1 = ItemFactory.create(
+            category="vertical",
+            parent_location=sub_section1.location,
+            metadata={'graded': True, 'format': 'Homework'},
+            display_name="Vertical 1",
+        )
+        sub_section2 = ItemFactory.create(
+            category="sequential",
+            parent_location=chapter2.location,
+            data=test_data,
+            display_name="Sequence 2",
+        )
+        vertical2 = ItemFactory.create(
+            category="vertical",
+            parent_location=sub_section2.location,
+            metadata={'graded': True, 'format': 'Midterm Exam'},
+            display_name="Vertical 1",
         )
         ItemFactory.create(
             category="sequential",
@@ -101,35 +123,35 @@ class CourseModuleCompletionTests(ModuleStoreTestCase):
             max_grade=45
         )
         self.problem = ItemFactory.create(
-            parent_location=chapter1.location,
+            parent_location=vertical1.location,
             category='problem',
             data=StringResponseXMLFactory().build_xml(answer='bar'),
             display_name="homework problem 1",
             metadata={'rerandomize': 'always', 'graded': True, 'format': "Homework"}
         )
         self.problem2 = ItemFactory.create(
-            parent_location=chapter2.location,
+            parent_location=vertical2.location,
             category='problem',
             data=StringResponseXMLFactory().build_xml(answer='bar'),
             display_name="homework problem 2",
             metadata={'rerandomize': 'always', 'graded': True, 'format': "Homework"}
         )
         self.problem3 = ItemFactory.create(
-            parent_location=chapter2.location,
+            parent_location=vertical2.location,
             category='problem',
             data=StringResponseXMLFactory().build_xml(answer='bar'),
             display_name="lab problem 1",
             metadata={'rerandomize': 'always', 'graded': True, 'format': "Lab"}
         )
         self.problem4 = ItemFactory.create(
-            parent_location=chapter2.location,
+            parent_location=vertical2.location,
             category='problem',
             data=StringResponseXMLFactory().build_xml(answer='bar'),
             display_name="midterm problem 2",
             metadata={'rerandomize': 'always', 'graded': True, 'format': "Midterm Exam"}
         )
         self.problem5 = ItemFactory.create(
-            parent_location=chapter2.location,
+            parent_location=vertical2.location,
             category='problem',
             data=StringResponseXMLFactory().build_xml(answer='bar'),
             display_name="final problem 2",
@@ -149,6 +171,20 @@ class CourseModuleCompletionTests(ModuleStoreTestCase):
             content_id=self.problem4.location
         )
         self.assertIsNotNone(completion_fetch)
+
+    def test_user_progress_updated_on_completion(self):
+        """
+        Tests user's progress is updated when user completed a module
+        """
+        module = self.get_module_for_user(self.user, self.course, self.problem4)
+        module.system.publish(module, 'progress', {})
+
+        user_progress = StudentProgress.objects.get(
+            user=self.user.id,
+            course_id=self.course.id,
+        )
+        self.assertIsNotNone(user_progress)
+        self.assertGreater(user_progress.progress, 0)
 
     def test_check_notifications(self):
         """
@@ -325,3 +361,25 @@ class CourseModuleCompletionTests(ModuleStoreTestCase):
 
         history = StudentProgressHistory.objects.all()
         self.assertEqual(len(history), 0)
+
+
+def connect_cmc_post_save():
+    """
+    Connects post_save signal of CourseModuleCompletion
+    """
+    post_save.connect(
+        receiver=handle_cmc_post_save_signal,
+        sender=CourseModuleCompletion,
+        dispatch_uid='edxapp.api_manager.post_save_cms'
+    )
+
+
+def disconnect_cmc_post_save():
+    """
+    Disconnects post_save signal of CourseModuleCompletion
+    """
+    post_save.disconnect(
+        receiver=handle_cmc_post_save_signal,
+        sender=CourseModuleCompletion,
+        dispatch_uid='edxapp.api_manager.post_save_cms'
+    )

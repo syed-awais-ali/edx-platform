@@ -29,6 +29,10 @@ def update_course_aggregate_metadata(course_key):  # pylint: disable=invalid-nam
         log.exception('An error occurred while retrieving course assessments: %s', ex.message)
         raise
 
-    course_metadata, __ = CourseAggregatedMetaData.objects.get_or_create(id=course_key)
-    course_metadata.total_assessments = len(course_leaf_nodes)
-    course_metadata.save()
+    try:
+        course_metadata = CourseAggregatedMetaData.objects.get(id=course_key)
+    except CourseAggregatedMetaData.DoesNotExist:
+        course_metadata = CourseAggregatedMetaData(id=course_key)
+    finally:
+        course_metadata.total_assessments = len(course_leaf_nodes)
+        course_metadata.save()

@@ -18,9 +18,10 @@ from capa.tests.response_xml_factory import StringResponseXMLFactory
 from courseware import module_render
 from courseware.model_data import FieldDataCache
 from xmodule.modulestore.tests.django_utils import ModuleStoreTestCase, mixed_store_config
-from student.tests.factories import UserFactory, AdminFactory
+from student.tests.factories import UserFactory, AdminFactory, CourseEnrollmentFactory
 from courseware.tests.factories import StaffFactory
 from xmodule.modulestore.tests.factories import CourseFactory, ItemFactory
+from openedx.core.djangoapps.content.course_metadata.models import CourseAggregatedMetaData
 
 from gradebook.models import StudentGradebook, StudentGradebookHistory
 from util.signals import course_deleted
@@ -516,3 +517,58 @@ class GradebookTests(ModuleStoreTestCase):
 
         history = StudentGradebookHistory.objects.all()
         self.assertEqual(len(history), 0)
+
+    @patch.dict(settings.FEATURES, {
+        'MARK_PROGRESS_ON_GRADING_EVENT': True,
+    })
+    def test_course_aggregate_metadata_update(self):
+        """
+        Tests course metadata updated when user completed a module
+        """
+        self._create_course()
+        CourseEnrollmentFactory.create(user=self.user, course_id=self.course.id)
+        module = self.get_module_for_user(self.user, self.course, self.problem)
+        grade_dict = {'value': 0.75, 'max_value': 1, 'user_id': self.user.id}
+        module.system.publish(module, 'grade', grade_dict)
+
+        course_metadata = CourseAggregatedMetaData.objects.get(
+            id=self.course.id,
+        )
+        self.assertIsNotNone(course_metadata)
+        self.assertEqual(course_metadata.total_users_started, 1)
+        self.assertEqual(course_metadata.total_users_completed, 0)
+        self.assertEqual(course_metadata.total_modules_completed, 1)
+
+    @patch.dict(settings.FEATURES, {
+        'MARK_PROGRESS_ON_GRADING_EVENT': True,
+    })
+    @override_settings(GRADEBOOK_GRADE_COMPLETE_PROFORMA_MATCH_RANGE=0.2)
+    def test_course_aggregate_metadata_one_user_completed_course(self):
+        """
+        Tests course metadata when at least one of users has completed course
+        """
+        self._create_course()
+        CourseEnrollmentFactory.create(user=self.user, course_id=self.course.id)
+        grade_dict = {'value': 0.75, 'max_value': 1, 'user_id': self.user.id}
+        module = self.get_module_for_user(self.user, self.course, self.problem)
+        module.system.publish(module, 'grade', grade_dict)
+
+        module = self.get_module_for_user(self.user, self.course, self.problem2)
+        module.system.publish(module, 'grade', grade_dict)
+
+        module = self.get_module_for_user(self.user, self.course, self.problem3)
+        module.system.publish(module, 'grade', grade_dict)
+
+        module = self.get_module_for_user(self.user, self.course, self.problem4)
+        module.system.publish(module, 'grade', grade_dict)
+
+        module = self.get_module_for_user(self.user, self.course, self.problem5)
+        module.system.publish(module, 'grade', grade_dict)
+
+        course_metadata = CourseAggregatedMetaData.objects.get(
+            id=self.course.id,
+        )
+        self.assertIsNotNone(course_metadata)
+        self.assertEqual(course_metadata.total_users_started, 1)
+        self.assertEqual(course_metadata.total_users_completed, 1)
+        self.assertEqual(course_metadata.total_modules_completed, 5)

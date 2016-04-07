@@ -19,6 +19,9 @@ class CourseAggregatedMetaData(TimeStampedModel):
     id = CourseKeyField(db_index=True, primary_key=True, max_length=255)  # pylint: disable=invalid-name
     total_modules = models.IntegerField(default=0)
     total_assessments = models.IntegerField(default=0)
+    total_users_started = models.IntegerField(default=0)
+    total_users_completed = models.IntegerField(default=0)
+    total_modules_completed = models.IntegerField(default=0)
 
     @staticmethod
     def get_from_id(course_id):
