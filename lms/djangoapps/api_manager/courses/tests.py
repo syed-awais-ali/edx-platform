@@ -29,7 +29,7 @@ from django_comment_common.models import Role, FORUM_ROLE_MODERATOR
 from gradebook.models import StudentGradebook
 from instructor.access import allow_access
 from student.tests.factories import UserFactory, CourseEnrollmentFactory
-from progress.tests import disconnect_cmc_post_save, connect_cmc_post_save
+from progress.tests import ProgressSignalTestMixin
 from student.models import CourseEnrollment
 
 from xmodule.modulestore.tests.factories import CourseFactory, ItemFactory
@@ -89,7 +89,7 @@ def _fake_get_course_thread_stats(course_id):
                                                    'ADVANCED_SECURITY': False,
                                                    'PREVENT_CONCURRENT_LOGINS': False
                                                    })
-class CoursesApiTests(ModuleStoreTestCase):
+class CoursesApiTests(ProgressSignalTestMixin, ModuleStoreTestCase):
     """ Test suite for Courses API views """
 
     def get_module_for_user(self, user, course, problem):
@@ -108,7 +108,6 @@ class CoursesApiTests(ModuleStoreTestCase):
 
     def setUp(self):
         super(CoursesApiTests, self).setUp()
-        connect_cmc_post_save()
         self.test_server_prefix = 'https://testserver'
         self.base_courses_uri = '/api/server/courses'
         self.base_groups_uri = '/api/server/groups'
@@ -292,7 +291,6 @@ class CoursesApiTests(ModuleStoreTestCase):
         Role.objects.get_or_create(
             name=FORUM_ROLE_MODERATOR,
             course_id=self.course.id)
-        self.addCleanup(disconnect_cmc_post_save)
         self.addCleanup(SignalDisconnectTestMixin.disconnect_course_published_signals)
 
     def do_get(self, uri):

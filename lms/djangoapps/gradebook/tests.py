@@ -22,6 +22,7 @@ from student.tests.factories import UserFactory, AdminFactory, CourseEnrollmentF
 from courseware.tests.factories import StaffFactory
 from xmodule.modulestore.tests.factories import CourseFactory, ItemFactory
 from openedx.core.djangoapps.content.course_metadata.models import CourseAggregatedMetaData
+from progress.tests import ProgressSignalTestMixin
 
 from gradebook.models import StudentGradebook, StudentGradebookHistory
 from util.signals import course_deleted
@@ -35,7 +36,7 @@ MODULESTORE_CONFIG = mixed_store_config(settings.COMMON_TEST_DATA_ROOT, {}, incl
 
 @override_settings(MODULESTORE=MODULESTORE_CONFIG)
 @override_settings(STUDENT_GRADEBOOK=True)
-class GradebookTests(ModuleStoreTestCase):
+class GradebookTests(ProgressSignalTestMixin, ModuleStoreTestCase):
     """ Test suite for Student Gradebook """
 
     def get_module_for_user(self, user, course, problem):

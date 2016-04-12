@@ -14,6 +14,7 @@ from datetime import datetime
 from django.utils.timezone import UTC
 
 from django.test.utils import override_settings
+from django.test import TestCase
 from django.conf import settings
 from django.db.models.signals import post_save
 
@@ -36,10 +37,43 @@ from edx_notifications.lib.consumer import get_notifications_count_for_user
 MODULESTORE_CONFIG = mixed_store_config(settings.COMMON_TEST_DATA_ROOT, {}, include_xml=False)
 
 
+class ProgressSignalTestMixin(TestCase):
+    """
+    Mixin for tests to enable/disable calls to progress signals.
+    """
+
+    def setUp(self):
+        ProgressSignalTestMixin.connect_cmc_post_save()
+        self.addCleanup(self.disconnect_cmc_post_save)
+        super(ProgressSignalTestMixin, self).setUp()
+
+    @staticmethod
+    def connect_cmc_post_save():
+        """
+        Connects post_save signal of CourseModuleCompletion
+        """
+        post_save.connect(
+            receiver=handle_cmc_post_save_signal,
+            sender=CourseModuleCompletion,
+            dispatch_uid='edxapp.api_manager.post_save_cms'
+        )
+
+    @staticmethod
+    def disconnect_cmc_post_save():
+        """
+        Disconnects post_save signal of CourseModuleCompletion
+        """
+        post_save.disconnect(
+            receiver=handle_cmc_post_save_signal,
+            sender=CourseModuleCompletion,
+            dispatch_uid='edxapp.api_manager.post_save_cms'
+        )
+
+
 @override_settings(MODULESTORE=MODULESTORE_CONFIG)
 @override_settings(STUDENT_GRADEBOOK=True)
 @patch.dict(settings.FEATURES, {'ENABLE_NOTIFICATIONS': True})
-class CourseModuleCompletionTests(ModuleStoreTestCase):
+class CourseModuleCompletionTests(ProgressSignalTestMixin, ModuleStoreTestCase):
     """ Test suite for CourseModuleCompletion """
 
     def get_module_for_user(self, user, course, problem):
@@ -58,12 +92,10 @@ class CourseModuleCompletionTests(ModuleStoreTestCase):
 
     def setUp(self):
         super(CourseModuleCompletionTests, self).setUp()
-        connect_cmc_post_save()
         self.user = UserFactory()
         self._create_course()
 
         initialize_notifications()
-        self.addCleanup(disconnect_cmc_post_save)
 
     def _create_course(self, start=None, end=None):
         self.course = CourseFactory.create(
@@ -361,25 +393,3 @@ class CourseModuleCompletionTests(ModuleStoreTestCase):
 
         history = StudentProgressHistory.objects.all()
         self.assertEqual(len(history), 0)
-
-
-def connect_cmc_post_save():
-    """
-    Connects post_save signal of CourseModuleCompletion
-    """
-    post_save.connect(
-        receiver=handle_cmc_post_save_signal,
-        sender=CourseModuleCompletion,
-        dispatch_uid='edxapp.api_manager.post_save_cms'
-    )
-
-
-def disconnect_cmc_post_save():
-    """
-    Disconnects post_save signal of CourseModuleCompletion
-    """
-    post_save.disconnect(
-        receiver=handle_cmc_post_save_signal,
-        sender=CourseModuleCompletion,
-        dispatch_uid='edxapp.api_manager.post_save_cms'
-    )
