@@ -294,6 +294,10 @@ class UsersList(SecureListAPIView):
         if name is not None:
             queryset = queryset.filter(profile__name=name)
 
+        partial_course = self.request.QUERY_PARAMS.get('partial_course', None)
+        if partial_course is not None:
+            queryset = queryset.filter(courseenrollment__course_id__icontains=partial_course).distinct()
+
         queryset = queryset.prefetch_related('organizations')\
             .select_related('courseenrollment_set', 'profile')\
             .annotate(courses_enrolled=Count('courseenrollment'))
