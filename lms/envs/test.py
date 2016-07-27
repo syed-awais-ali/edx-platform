@@ -60,6 +60,8 @@ FEATURES['DISABLE_START_DATES'] = True
 # the one in cms/envs/test.py
 FEATURES['ENABLE_DISCUSSION_SERVICE'] = False
 
+FEATURES['ENABLE_DISCUSSION_EMAIL_DIGEST'] = True
+
 FEATURES['ENABLE_SERVICE_STATUS'] = True
 
 FEATURES['ENABLE_SHOPPING_CART'] = True
@@ -568,6 +570,30 @@ FACEBOOK_API_VERSION = "v2.2"
 ######### custom courses #########
 INSTALLED_APPS += ('lms.djangoapps.ccx', 'openedx.core.djangoapps.ccxcon')
 FEATURES['CUSTOM_COURSES_EDX'] = True
+
+##### edx solutions apps for McKA #####
+EDX_API_KEY = 'test_api_key'
+FEATURES['EDX_SOLUTIONS_API'] = True
+
+INSTALLED_APPS += (
+    'course_metadata',
+    'edx_solutions_api_integration',
+    'social_engagement',
+    'gradebook',
+    'progress',
+    'edx_solutions_projects',
+    'edx_solutions_organizations',
+)
+
+
+############# Student Module #################
+FEATURES['SIGNAL_ON_SCORE_CHANGED'] = True
+
+# Disable course_published signals
+# If we don't disconnect then tests take too much time to run since
+# this signal is sent every time course or a course block is created
+# via CourseFactory or ItemFactory
+FEATURES['DISABLE_COURSE_PUBLISHED_SIGNAL'] = True
 
 # Set dummy values for profile image settings.
 PROFILE_IMAGE_BACKEND = {

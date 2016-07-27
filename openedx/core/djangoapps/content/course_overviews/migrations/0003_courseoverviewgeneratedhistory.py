@@ -14,6 +14,14 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
+            name='CourseOverviewTab',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('tab_id', models.CharField(max_length=50)),
+                ('course_overview', models.ForeignKey(related_name='tabs', to='course_overviews.CourseOverview')),
+            ],
+        ),
+        migrations.CreateModel(
             name='CourseOverviewGeneratedHistory',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),

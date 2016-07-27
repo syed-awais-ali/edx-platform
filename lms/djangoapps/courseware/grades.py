@@ -367,7 +367,7 @@ def _calculate_totaled_scores(
         for section_info in sections:
             section = section_info['section_block']
             section_name = block_metadata_utils.display_name_with_default(section)
-            section_due = section_descriptor.due
+            section_due = section.due
 
             with outer_atomic():
                 # Check to
@@ -422,11 +422,11 @@ def _calculate_totaled_scores(
                             )
                         )
 
-                _, graded_total = graders.aggregate_scores(scores, section_name)
-                if keep_raw_scores:
-                    raw_scores += scores
-            else:
-                graded_total = Score(0.0, 1.0, True, section_name, None, section_due)
+                    _, graded_total = graders.aggregate_scores(scores, section_name)
+                    if keep_raw_scores:
+                        raw_scores += scores
+                else:
+                    graded_total = Score(0.0, 1.0, True, section_name, None, section_due)
 
                 # Add the graded total to totaled_scores
                 if graded_total.possible > 0:

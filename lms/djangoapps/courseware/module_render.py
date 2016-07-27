@@ -761,13 +761,15 @@ def get_module_system_for_user(user, student_data,  # TODO  # pylint: disable=to
     user_is_staff = bool(has_access(user, u'staff', descriptor.location, course_id))
 
     services_list = {
-        'i18n': ModuleI18nService(),
         'fs': FSService(),
         'field-data': field_data,
+        'user': DjangoXBlockUserService(user, user_is_staff=user_is_staff),
         'settings': SettingsService(),
         'courseware_parent_info': CoursewareParentInfoService(),
         "reverification": ReverificationService(),
-        'user': DjangoXBlockUserService(user, user_is_staff=user_is_staff),
+        'proctoring': ProctoringService(),
+        'credit': CreditService(),
+        'bookmarks': BookmarksService(user=user),
     }
 
     if settings.FEATURES.get('ENABLE_NOTIFICATIONS', False):
