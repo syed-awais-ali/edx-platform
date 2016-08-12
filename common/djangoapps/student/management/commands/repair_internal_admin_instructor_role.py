@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = '''Remove instructor role of internal admins on courses in their organization and add it on internal tagged courses
 example:
-    manage.py repair_internal_admin_instructor_role dryrun --settings={aws, devstack}
+    ./manage.py lms repair_internal_admin_instructor_role dryrun --settings={aws, devstack}
 
 Options:
     createlog
