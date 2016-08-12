@@ -1,4 +1,3 @@
-import sys
 import datetime
 import logging
 
@@ -12,6 +11,7 @@ from edx_solutions_api_integration.courseware_access import get_course_key
 from courseware import courses
 
 log = logging.getLogger(__name__)
+
 
 class Command(BaseCommand):
     help = '''Remove instructor role of internal admins on courses in their organization and add it on internal tagged courses
@@ -43,12 +43,12 @@ Options:
             dry_run = True
         if 'createlog' in args:
             create_log = True
-            fh = logging.FileHandler('repair_internal_admin_instructor_role.log')
-            fh.setLevel(logging.DEBUG)
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            fh.setFormatter(formatter)
-            log.addHandler(fh)      
-        
+            file_handler = logging.FileHandler('repair_internal_admin_instructor_role.log')
+            file_handler.setLevel(logging.DEBUG)
+            formatter = logging.Formatter('%(asctime)s-%(name)s-%(levelname)s-%(message)s')
+            file_handler.setFormatter(formatter)
+            log.addHandler(file_handler)
+
         log.info(msg_string)
 
         if dry_run:
@@ -89,7 +89,7 @@ Options:
         #for all internal admins check their roles and remove instructor role on course if he doesn't have staff role on course and course isn't tagged internal
         for internal_admin in internal_admins:
             user_roles = CourseAccessRole.objects.filter(user=internal_admin)
-            
+
             instructor_courses = []
             staff_courses = []
             for user_role in user_roles:
@@ -137,5 +137,3 @@ Options:
 
         if create_log:
             print 'Script started in create log mode, please open repair_internal_admin_instructor_role.log file.'
-        
-        
