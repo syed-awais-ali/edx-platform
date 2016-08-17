@@ -1,7 +1,6 @@
 # Custom requirements to be customized by individual OpenEdX instances
 
 # When updating a hash of an XBlock that uses xblock-utils, please update its version hash in github.txt.
--e git+https://github.com/edx/xblock-utils.git@08e5a5a9fc8ab46b627435427fd7e04c20809009#egg=xblock-utils
 -e git+https://github.com/edx-solutions/xblock-mentoring.git@8837eb5d91fed05ec4758dfd9b9e7adc5c906210#egg=xblock-mentoring
 -e git+https://github.com/edx-solutions/xblock-image-explorer.git@21b9bcc4f2c7917463ab18a596161ac6c58c9c4a#egg=xblock-image-explorer
 -e git+https://github.com/edx-solutions/xblock-drag-and-drop.git@92ee2055a16899090a073e1df81e35d5293ad767#egg=xblock-drag-and-drop
@@ -10,11 +9,10 @@
 -e git+https://github.com/edx-solutions/xblock-group-project.git@6b3393a1a5eb76224ecd3311e870ab8adf4badbf#egg=xblock-group-project
 -e git+https://github.com/edx-solutions/xblock-adventure.git@7bdeb62b1055377dc04a7b503f7eea8264f5847b#egg=xblock-adventure
 -e git+https://github.com/open-craft/xblock-poll.git@bd93e4851c15d9cb1522e692f8b692cf584d23b1#egg=xblock-poll
--e git+https://github.com/edx/edx-notifications.git@49182bd017dd6f7e94a9bf6c65539753d209fa40#egg=edx-notifications
+-e git+https://github.com/edx/edx-notifications.git@1a8e3ed8e65f27c666d507813d006450e72b2aad#egg=edx-notifications
 -e git+https://github.com/open-craft/problem-builder.git@527671f1c2b1f0e6a1f815c14740c494ce623aa5#egg=problem-builder
 -e git+https://github.com/open-craft/xblock-group-project-v2.git@bf09c7e91089d4323655071cb5ab9cd65a4b4f0a#egg=xblock-group-project-v2
 -e git+https://github.com/OfficeDev/xblock-officemix.git@86238f5968a08db005717dbddc346808f1ed3716#egg=xblock-officemix
--e git+https://github.com/edx-solutions/xblock.git@d25a661454da9e6b149d6c559de50ddcd0770857#egg=xblock
 git+https://github.com/mckinseyacademy/xblock-diagnosticfeedback.git@v0.2.1#egg=xblock-diagnostic-feedback==0.2.1
 # git+https://github.com/edx-solutions/api-integration.git@v1.0.6#egg=api-integration==1.0.6
 # git+https://github.com/edx-solutions/organizations-edx-platform-extensions.git@v1.1.2#egg=organizations-edx-platform-extensions==1.1.2
@@ -25,7 +23,7 @@ git+https://github.com/mckinseyacademy/xblock-diagnosticfeedback.git@v0.2.1#egg=
 # git+https://github.com/edx-solutions/progress-edx-platform-extensions.git@1.0.1#egg=progress-edx-platform-extensions==1.0.1
 
 git+https://github.com/edx-solutions/api-integration.git@2b6e7c0d37c1e871bfc882fd4e2a87686c2004df#egg=api-integration
-git+https://github.com/edx-solutions/organizations-edx-platform-extensions.git@1590710c6772972bb950b432b86b298c00dee6b8#egg=organizations-edx-platform-extensions
+git+https://github.com/edx-solutions/organizations-edx-platform-extensions.git@7c9799a2f7f12d09033c07b3b1891683c58fe8e7#egg=organizations-edx-platform-extensions
 git+https://github.com/edx-solutions/gradebook-edx-platform-extensions.git@76ef2a3de4aa6094c1443cc831ffb9235d0539af#egg=gradebook-edx-platform-extensions
 git+https://github.com/edx-solutions/projects-edx-platform-extensions.git@b11c9a9a09996eea9509994580417575ec955b7f#egg=projects-edx-platform-extensions
 git+https://github.com/edx-solutions/discussion-edx-platform-extensions.git@e8bcf9a79e42e44bee3770ba873a5638b7c9d287#egg=discussion-edx-platform-extensions
