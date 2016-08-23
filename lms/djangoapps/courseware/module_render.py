@@ -559,6 +559,18 @@ def get_module_system_for_user(user, student_data,  # TODO  # pylint: disable=to
             course_id,
             descriptor.location,
         )
+
+        # Send a signal out to any listeners who are waiting for score change
+        # events.
+        SCORE_CHANGED.send(
+            sender=None,
+            points_possible=event.get('max_value'),
+            points_earned=event.get('value'),
+            user_id=user_id,
+            course_id=unicode(course_id),
+            usage_id=unicode(descriptor.location)
+        )
+
         # we can treat a grading event as a indication that a user
         # "completed" an xBlock
         if settings.FEATURES.get('MARK_PROGRESS_ON_GRADING_EVENT', False):
@@ -579,17 +591,6 @@ def get_module_system_for_user(user, student_data,  # TODO  # pylint: disable=to
         user_id = event.get('user_id', user.id)
         if not user_id:
             return
-
-        # Send a signal out to any listeners who are waiting for score change
-        # events.
-        SCORE_CHANGED.send(
-            sender=None,
-            points_possible=event.get('max_value'),
-            points_earned=event.get('value'),
-            user_id=user_id,
-            course_id=unicode(course_id),
-            usage_id=unicode(descriptor.location)
-        )
 
         CourseModuleCompletion.objects.get_or_create(
             user_id=user_id,

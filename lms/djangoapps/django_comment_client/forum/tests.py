@@ -471,7 +471,7 @@ class SingleCohortedThreadTestCase(CohortedTestCase):
 
 
 @patch('lms.lib.comment_client.utils.requests.request', autospec=True)
-class SingleThreadAccessTestCase(CohortedContentTestCase):
+class SingleThreadAccessTestCase(CohortedTestCase):
     def call_view(self, mock_request, commentable_id, user, group_id, thread_group_id=None, pass_group_id=True):
         thread_id = "test_thread_id"
         mock_request.side_effect = make_mock_request_impl(

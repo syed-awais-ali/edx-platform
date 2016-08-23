@@ -422,7 +422,7 @@ def _calculate_totaled_scores(
                             )
                         )
 
-                    _, graded_total = graders.aggregate_scores(scores, section_name)
+                    __, graded_total = graders.aggregate_scores(scores, section_name)
                     if keep_raw_scores:
                         raw_scores += scores
                 else:
@@ -646,7 +646,7 @@ def get_score(user, block, scores_client, submissions_scores_cache):
         if total is None:
             return (None, None)
 
-    return weighted_score(correct, total, float(block.weight))
+    return weighted_score(correct, total, block.weight)
 
 
 def iterate_grades_for(course_or_id, students, keep_raw_scores=False):

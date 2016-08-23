@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='courseoverview',
             name='version',
-            field=models.IntegerField(default=1),
+            field=models.IntegerField(),
         ),
         migrations.AddField(
             model_name='courseoverview',
