@@ -23,9 +23,9 @@ git+https://github.com/mckinseyacademy/xblock-diagnosticfeedback.git@v0.2.1#egg=
 # git+https://github.com/edx-solutions/progress-edx-platform-extensions.git@1.0.1#egg=progress-edx-platform-extensions==1.0.1
 
 git+https://github.com/edx-solutions/api-integration.git@2b6e7c0d37c1e871bfc882fd4e2a87686c2004df#egg=api-integration
-git+https://github.com/edx-solutions/organizations-edx-platform-extensions.git@7c9799a2f7f12d09033c07b3b1891683c58fe8e7#egg=organizations-edx-platform-extensions
+git+https://github.com/edx-solutions/organizations-edx-platform-extensions.git@ce7770a725a3e4602c1b4720d65405293772e211#egg=organizations-edx-platform-extensions
 git+https://github.com/edx-solutions/gradebook-edx-platform-extensions.git@76ef2a3de4aa6094c1443cc831ffb9235d0539af#egg=gradebook-edx-platform-extensions
-git+https://github.com/edx-solutions/projects-edx-platform-extensions.git@b11c9a9a09996eea9509994580417575ec955b7f#egg=projects-edx-platform-extensions
+git+https://github.com/edx-solutions/projects-edx-platform-extensions.git@dd1161b07cd86aa4531fc8cedaae1a8a6c085955#egg=projects-edx-platform-extensions
 git+https://github.com/edx-solutions/discussion-edx-platform-extensions.git@e8bcf9a79e42e44bee3770ba873a5638b7c9d287#egg=discussion-edx-platform-extensions
-git+https://github.com/edx-solutions/course-edx-platform-extensions.git@057ad21bb1fd60110ceb9be9b3e2a998d4e3d7a3#egg=course-edx-platform-extensions
+git+https://github.com/edx-solutions/course-edx-platform-extensions.git@e2090700e421dbf212e084310de7d7b79327fb56#egg=course-edx-platform-extensions
 git+https://github.com/edx-solutions/progress-edx-platform-extensions.git@63b848124b27a2c77b5fa70ca1a8081e8d07412a#egg=progress-edx-platform-extensions

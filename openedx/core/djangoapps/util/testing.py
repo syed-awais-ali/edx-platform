@@ -14,6 +14,7 @@ from openedx.core.djangoapps.course_groups.tests.helpers import CohortFactory
 from course_metadata.signals import (
     listen_for_course_publish as listener_in_course_metadata
 )
+from openedx.core.djangoapps.content.course_structures.signals import listen_for_course_publish
 from openedx.core.djangoapps.user_api.tests.factories import UserCourseTagFactory
 
 
@@ -230,4 +231,8 @@ class SignalDisconnectTestMixin(object):
         """
         SignalHandler.course_published.disconnect(
             listener_in_course_metadata, dispatch_uid='course_metadata'
+        )
+
+        SignalHandler.course_published.disconnect(
+            listen_for_course_publish, dispatch_uid='openedx.core.djangoapps.content.course_structures'
         )
