@@ -138,22 +138,23 @@
                 var amount, browseFilterHeight, discussionBottomOffset, discussionsBodyBottom,
                     discussionsBodyTop, headerHeight, refineBarHeight, scrollTop, sidebarHeight, topOffset,
                     windowHeight, $discussionBody, $sidebar;
+                var sidebar_padding = 10;
                 scrollTop = $(window).scrollTop();
                 windowHeight = $(window).height();
                 $discussionBody = this.$('.discussion-column');
                 discussionsBodyTop = $discussionBody[0] ? $discussionBody.offset().top : undefined;
                 discussionsBodyBottom = discussionsBodyTop + $discussionBody.outerHeight();
                 $sidebar = this.$('.forum-nav');
-                if (scrollTop > discussionsBodyTop - this.sidebar_padding) {
-                    $sidebar.css('top', scrollTop - discussionsBodyTop + this.sidebar_padding);
+                if (scrollTop > discussionsBodyTop - sidebar_padding) {
+                    $sidebar.css('top', scrollTop - discussionsBodyTop + sidebar_padding);
                 } else {
                     $sidebar.css('top', '0');
                 }
-                sidebarHeight = windowHeight - Math.max(discussionsBodyTop - scrollTop, this.sidebar_padding);
+                sidebarHeight = windowHeight - Math.max(discussionsBodyTop - scrollTop, sidebar_padding);
                 topOffset = scrollTop + windowHeight;
-                discussionBottomOffset = discussionsBodyBottom + this.sidebar_padding;
+                discussionBottomOffset = discussionsBodyBottom + sidebar_padding;
                 amount = Math.max(topOffset - discussionBottomOffset, 0);
-                sidebarHeight = sidebarHeight - this.sidebar_padding - amount;
+                sidebarHeight = sidebarHeight - sidebar_padding - amount;
                 sidebarHeight = Math.min(sidebarHeight + 1, $discussionBody.outerHeight());
                 $sidebar.css('height', sidebarHeight);
                 headerHeight = this.$('.forum-nav-header').outerHeight();
