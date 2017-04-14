@@ -101,7 +101,7 @@
                 el: this.$('.inline-threads'),
                 collection: self.discussion,
                 courseSettings: self.course_settings,
-                hideRefineBar: false  // TODO: re-enable the search/filter bar when it works correctly
+                hideRefineBar: true  // TODO: re-enable the search/filter bar when it works correctly
             });
 
             this.threadListView.render();
