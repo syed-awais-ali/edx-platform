@@ -37,6 +37,9 @@ class BlockSerializer(serializers.Serializer):
     graded = serializers.BooleanField(default=False)
     format = serializers.CharField()
     children = serializers.CharField()
+    start = serializers.CharField()
+    end = serializers.CharField()
+    due = serializers.CharField()
 
     def to_representation(self, obj):
         """

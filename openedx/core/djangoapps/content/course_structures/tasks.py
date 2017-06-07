@@ -6,6 +6,7 @@ import logging
 
 from celery.task import task
 from opaque_keys.edx.keys import CourseKey
+from xmodule.modulestore import EdxJSONEncoder
 from xmodule.modulestore.django import modulestore
 
 
@@ -39,7 +40,7 @@ def _generate_course_structure(course_key):
 
             # Retrieve these attributes separately so that we can fail gracefully
             # if the block doesn't have the attribute.
-            attrs = (('graded', False), ('format', None))
+            attrs = (('graded', False), ('format', None), ('due', None), ('start', None), ('end', None))
             for attr, default in attrs:
                 if hasattr(curr_block, attr):
                     block[attr] = getattr(curr_block, attr, default)
@@ -81,8 +82,8 @@ def update_course_structure(course_key):
         log.exception('An error occurred while generating course structure: %s', ex.message)
         raise
 
-    structure_json = json.dumps(structure['structure'])
-    discussion_id_map_json = json.dumps(structure['discussion_id_map'])
+    structure_json = json.dumps(structure['structure'], cls=EdxJSONEncoder)
+    discussion_id_map_json = json.dumps(structure['discussion_id_map'], cls=EdxJSONEncoder)
 
     structure_model, created = CourseStructure.objects.get_or_create(
         course_id=course_key,
