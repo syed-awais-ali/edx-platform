@@ -7,7 +7,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from django.contrib.auth import get_user_model
 from opaque_keys.edx.keys import CourseKey
 from progress.models import StudentProgress
-from rest_framework.exceptions import NotFound, ParseError, PermissionDenied
+from rest_framework.exceptions import NotAuthenticated, NotFound, ParseError, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -54,6 +54,8 @@ class CompletionViewMixin(object):
                     user = self.request.user
                 else:
                     raise NotFound()
+        if not user.is_authenticated():
+            raise NotAuthenticated()
         return user
 
     def get_progress_queryset(self):

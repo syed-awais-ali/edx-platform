@@ -3,18 +3,15 @@ Test serialization of completion data.
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from django.contrib.auth import get_user_model
 from django.test.utils import override_settings
 from rest_framework.test import APIClient
 
-from opaque_keys.edx.keys import CourseKey, UsageKey
+from opaque_keys.edx.keys import UsageKey
 from progress import models
 
 from student.tests.factories import UserFactory
 from xmodule.modulestore.tests.django_utils import SharedModuleStoreTestCase
 from xmodule.modulestore.tests.factories import ToyCourseFactory
-from ..serializers import CourseCompletionSerializer, SubsectionCourseCompletionSerializer
-from ..models import CourseCompletionFacade
 
 
 
@@ -131,3 +128,16 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
             ]
         }
         self.assertEqual(response.data, expected)
+
+    def test_unauthenticated(self):
+        self.client.force_authenticate(None)
+        detailresponse = self.client.get('/api/completion/v1/course/edX/toy/2012_Fall/')
+        self.assertEqual(detailresponse.status_code, 403)
+        listresponse = self.client.get('/api/completion/v1/course/')
+        self.assertEqual(listresponse.status_code, 403)
+
+    def test_wrong_user(self):
+        user = UserFactory.create(username='wrong')
+        self.client.force_authenticate(user)
+        detailresponse = self.client.get('/api/completion/v1/course/edX/toy/2012_Fall/?user=test_user')
+        self.assertEqual(detailresponse.status_code, 404)
