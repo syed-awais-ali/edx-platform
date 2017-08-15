@@ -9,7 +9,7 @@ from rest_framework.test import APIClient
 from opaque_keys.edx.keys import UsageKey
 from progress import models
 
-from student.tests.factories import UserFactory
+from student.tests.factories import AdminFactory, UserFactory
 from xmodule.modulestore.tests.django_utils import SharedModuleStoreTestCase
 from xmodule.modulestore.tests.factories import ToyCourseFactory
 
@@ -139,5 +139,11 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
     def test_wrong_user(self):
         user = UserFactory.create(username='wrong')
         self.client.force_authenticate(user)
-        detailresponse = self.client.get('/api/completion/v1/course/edX/toy/2012_Fall/?user=test_user')
-        self.assertEqual(detailresponse.status_code, 404)
+        response = self.client.get('/api/completion/v1/course/?user=test_user')
+        self.assertEqual(response.status_code, 404)
+
+    def test_staff_access(self):
+        user = AdminFactory.create(username='staff')
+        self.client.force_authenticate(user)
+        response = self.client.get('/api/completion/v1/course/?user=test_user')
+        self.assertEqual(response.status_code, 200)
