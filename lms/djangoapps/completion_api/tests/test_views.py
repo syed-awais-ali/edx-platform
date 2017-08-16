@@ -14,7 +14,6 @@ from xmodule.modulestore.tests.django_utils import SharedModuleStoreTestCase
 from xmodule.modulestore.tests.factories import ToyCourseFactory
 
 
-
 @override_settings(STUDENT_GRADEBOOK=True)
 class CompletionViewTestCase(SharedModuleStoreTestCase):
     """
@@ -39,6 +38,9 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
         self.client.force_authenticate(user=self.test_user)
 
     def mark_completions(self):
+        """
+        Create completion data to test against.
+        """
         models.CourseModuleCompletion.objects.create(
             user=self.test_user,
             course_id=self.course.id,
@@ -51,7 +53,6 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
         )
 
     def test_list_view(self):
-        self.maxDiff=None
         response = self.client.get('/api/completion/v1/course/')
         self.assertEqual(response.status_code, 200)
         expected = {
@@ -70,7 +71,6 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
         self.assertEqual(response.data, expected)
 
     def test_list_view_with_subsections(self):
-        self.maxDiff=None
         response = self.client.get('/api/completion/v1/course/?extra_fields=subsections')
         self.assertEqual(response.status_code, 200)
         expected = {

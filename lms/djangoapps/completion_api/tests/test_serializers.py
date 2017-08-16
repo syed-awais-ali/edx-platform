@@ -1,20 +1,17 @@
 """
 Test serialization of completion data.
 """
+
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import ddt
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.test.utils import override_settings
-from mock import MagicMock, patch
 
 from opaque_keys.edx.keys import CourseKey, UsageKey
 from progress import models
 
-from courseware.model_data import FieldDataCache
-from courseware import module_render
 from xmodule.modulestore.tests.django_utils import SharedModuleStoreTestCase
 from xmodule.modulestore.tests.factories import ToyCourseFactory
 from ..serializers import CourseCompletionSerializer, SubsectionCourseCompletionSerializer
@@ -28,13 +25,21 @@ class MockCourseCompletion(CourseCompletionFacade):
     """
     Provide CourseCompletion info without hitting the modulestore.
     """
+    def __init__(self, progress):
+        super(MockCourseCompletion, self).__init__(progress)
+        self._possible = 19
+
     @property
     def possible(self):
         """
         Make up a number of possible blocks.  This prevents completable_blocks
         from being called, which prevents hitting the modulestore.
         """
-        return 19
+        return self._possible
+
+    @possible.setter
+    def possible(self, value):
+        self._possible = value
 
     @property
     def subsections(self):
@@ -49,6 +54,12 @@ class CourseCompletionSerializerTestCase(TestCase):
     """
     Test that the CourseCompletionSerializer returns appropriate results.
     """
+
+    def setUp(self):
+        self.test_user = User.objects.create(
+            username='test_user',
+            email='test_user@example.com',
+        )
 
     @ddt.data(
         [CourseCompletionSerializer, {}],
@@ -72,12 +83,8 @@ class CourseCompletionSerializerTestCase(TestCase):
     )
     @ddt.unpack
     def test_serialize_student_progress_object(self, serializer_cls, extra_body):
-        test_user = User.objects.create(
-            username='test_user',
-            email='test_user@example.com'
-        )
         progress = models.StudentProgress.objects.create(
-            user=test_user,
+            user=self.test_user,
             course_id=CourseKey.from_string('course-v1:abc+def+ghi'),
             completions=16,
         )
@@ -95,6 +102,24 @@ class CourseCompletionSerializerTestCase(TestCase):
         self.assertEqual(
             serial.data,
             expected,
+        )
+
+    def test_zero_possible(self):
+        progress = models.StudentProgress.objects.create(
+            user=self.test_user,
+            course_id=CourseKey.from_string('course-v1:abc+def+ghi'),
+            completions=0,
+        )
+        completion = MockCourseCompletion(progress)
+        completion.possible = 0
+        serial = CourseCompletionSerializer(completion)
+        self.assertEqual(
+            serial.data['completion'],
+            {
+                'earned': 0.0,
+                'possible': 0.0,
+                'percent': 100,
+            },
         )
 
 
@@ -165,7 +190,7 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
     def test_with_subsections(self):
         block_key = UsageKey.from_string("i4x://edX/toy/video/sample_video")
         block_key = block_key.map_into_course(self.course.id)
-        module_completion = models.CourseModuleCompletion.objects.create(
+        models.CourseModuleCompletion.objects.create(
             user=self.test_user,
             course_id=self.course.id,
             content_id=block_key,
@@ -191,7 +216,7 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
                         'course_key': u'edX/toy/2012_Fall',
                         'block_key': u'i4x://edX/toy/sequential/vertical_sequential',
                         'completion': {'earned': 1.0, 'possible': 5.0, 'percent': 20},
-                    }, 
+                    },
                 ]
             }
         )

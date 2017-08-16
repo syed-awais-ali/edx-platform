@@ -80,7 +80,7 @@ class CourseCompletionFacade(object):
     @property
     def blocks(self):
         """
-        Return all blocks in the course.
+        Return a a list of UsageKeys for all blocks in the course.
         """
         if self._blocks is None:
             course_location = CourseOverview.load_from_module_store(self.course_key).location
@@ -145,7 +145,11 @@ class CourseCompletionFacade(object):
 
         Percent is returned as an integer between 0 and 100.
         """
-        return int(round(100 * self.earned / self.possible))
+        if self.possible == 0:
+            percent = 100
+        else:
+            percent = int(round(100 * self.earned / self.possible))
+        return percent
 
     def get_blocks_by_category(self, category):
         """
@@ -220,9 +224,6 @@ class BlockCompletion(object):
             course_id=self.course_key
         )
         module_keys = {UsageKey.from_string(mod.content_id).map_into_course(self.course_key) for mod in modules}
-        print(module_keys)
-        print(self.completable_blocks)
-        print(module_keys & self.completable_blocks)
         return module_keys & self.completable_blocks
 
     @property

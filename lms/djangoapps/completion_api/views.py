@@ -39,7 +39,6 @@ class CompletionViewMixin(object):
 
         Usually the requesting user, but a staff user can override this.
         """
-        # TODO: Allow staff user to specify any learner.
         requested_username = self.request.GET.get('user')
         if requested_username is None:
             user = self.request.user
@@ -120,7 +119,6 @@ class CompletionDetailView(APIView, CompletionViewMixin):
         Handler for GET requests.
         """
         course_key = CourseKey.from_string(course_key)
-        print("looking for key:", (course_key, type(course_key)))
         progress = self.get_progress_queryset().get(course_id=course_key)
         completion = CourseCompletionFacade(progress)
         return Response(self.get_serializer()(completion).data)
