@@ -57,7 +57,39 @@ IGNORE_CATEGORIES = {
 }
 
 
-class CourseCompletionFacade(object):
+class CompletionDataMixin(object):
+    """
+    Common calculations for completion values of courses or blocks within courses.
+
+    Classes using this mixin must implement:
+
+        * self.earned (float)
+        * self.completable_blocks (Collection<UsageKey>)
+    """
+
+    @property
+    def possible(self):
+        """
+        Return the maximum number of completions the user could earn in the
+        course.
+        """
+        return float(len(self.completable_blocks))
+
+    @property
+    def percent(self):
+        """
+        Return the percent of the course completed by the user.
+
+        Percent is returned as an integer between 0 and 100.
+        """
+        if self.possible == 0:
+            percent = 100
+        else:
+            percent = int(round(100 * self.earned / self.possible))
+        return percent
+
+
+class CourseCompletionFacade(CompletionDataMixin, object):
     """
     Facade wrapping progress.models.StudentProgress model.
     """
@@ -80,7 +112,12 @@ class CourseCompletionFacade(object):
     @property
     def blocks(self):
         """
-        Return a a list of UsageKeys for all blocks in the course.
+        Return an
+        `openedx.core.lib.block_structure.block_structure.BlockStructureBlockData`
+        collection which behaves as dict that maps
+        `opaque_keys.edx.locator.BlockUsageLocator`s to
+        `openedx.core.lib.block_structure.block_structure.BlockData` objects
+        for all blocks in the course.
         """
         if self._blocks is None:
             course_location = CourseOverview.load_from_module_store(self.course_key).location
@@ -94,8 +131,8 @@ class CourseCompletionFacade(object):
     @property
     def completable_blocks(self):
         """
-        Return the set of blocks that can be completed that are visible to
-        self.user.
+        Return a set of UsageKeys for all blocks that can be completed that are
+        visible to self.user.
 
         This method encapsulates the facade's access to the modulestore, making
         it a useful candidate for mocking.
@@ -126,34 +163,11 @@ class CourseCompletionFacade(object):
         """
         Return the number of completions earned by the user.
         """
-
         return self._inner.completions
 
-    @property
-    def possible(self):
+    def iter_block_keys_in_category(self, category):
         """
-        Return the maximum number of completions the user could earn in the
-        course.
-        """
-
-        return float(len(self.completable_blocks))
-
-    @property
-    def percent(self):
-        """
-        Return the percent of the course completed by the user.
-
-        Percent is returned as an integer between 0 and 100.
-        """
-        if self.possible == 0:
-            percent = 100
-        else:
-            percent = int(round(100 * self.earned / self.possible))
-        return percent
-
-    def get_blocks_by_category(self, category):
-        """
-        Return all blocks of the specified category
+        Yields the UsageKey for all blocks of the specified category.
         """
         for block in self.blocks:
             if self.blocks.get_xblock_field(block, 'category') == category:
@@ -165,12 +179,12 @@ class CourseCompletionFacade(object):
         Return the BlockCompletion for all subsections.
         """
         subsections = []
-        for block in self.get_blocks_by_category('sequential'):
-            subsections.append(BlockCompletion(self.user, block, self))
+        for block_key in self.iter_block_keys_in_category('sequential'):
+            subsections.append(BlockCompletion(self.user, block_key, self))
         return subsections
 
 
-class BlockCompletion(object):
+class BlockCompletion(CompletionDataMixin, object):
     """
     Class to represent completed blocks within a given block of the course.
     """
@@ -186,7 +200,10 @@ class BlockCompletion(object):
     @property
     def blocks(self):
         """
-        Return all blocks within the requested block.
+        Return an `openedx.core.lib.block_structure.block_structure.BlockStructureBlockData`
+        object which behaves as dict that maps `opaque_keys.edx.locator.BlockUsageLocator`s
+        to `openedx.core.lib.block_structure.block_structure.BlockData` objects
+        for all blocks in the sub-tree (or DAG) under self.block_key.
         """
         if self._blocks is None:
 
@@ -200,7 +217,7 @@ class BlockCompletion(object):
     @property
     def completable_blocks(self):
         """
-        Return the set of keys of all blocks within self.block that can be
+        Return the set of UsageKeys of all blocks within self.block that can be
         completed by self.user.
 
         This method encapsulates the class' access to the modulestore, making
@@ -216,7 +233,7 @@ class BlockCompletion(object):
     @property
     def completed_blocks(self):
         """
-        Return the set of keys of all blocks within self.block that have been
+        Return the set of UsageKeys of all blocks within self.block that have been
         completed by self.user.
         """
         modules = CourseModuleCompletion.objects.filter(
@@ -232,19 +249,3 @@ class BlockCompletion(object):
         The number of earned completions within self.block.
         """
         return float(len(self.completed_blocks))
-
-    @property
-    def possible(self):
-        """
-        The number of possible completions within self.block.
-        """
-        return float(len(self.completable_blocks))
-
-    @property
-    def percent(self):
-        """
-        Return the percent of the course completed by the user.
-
-        Percent is returned as an integer between 0 and 100.
-        """
-        return int(round(100 * self.earned / self.possible))
