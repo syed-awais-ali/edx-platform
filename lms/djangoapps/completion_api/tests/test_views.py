@@ -97,7 +97,6 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
 
     def test_detail_view(self):
         response = self.client.get('/api/completion/v1/course/edX/toy/2012_Fall/')
-        print(response.content)
         self.assertEqual(response.status_code, 200)
         expected = {
             'course_key': 'edX/toy/2012_Fall',
