@@ -14,8 +14,8 @@ from rest_framework.views import APIView
 
 from openedx.core.lib.api import authentication, paginators
 
-from .models import CourseCompletionFacade
-from .serializers import CourseCompletionSerializer, SubsectionCourseCompletionSerializer
+from .models import CourseCompletionFacade, AGGREGATABLE_BLOCK_CATEGORIES
+from .serializers import course_completion_serializer_factory
 
 User = get_user_model()  # pylint: disable=invalid-name
 
@@ -25,7 +25,7 @@ class CompletionViewMixin(object):
     Common functionality for completion views.
     """
 
-    _allowed_extra_fields = {'subsections'}
+    _allowed_extra_fields = AGGREGATABLE_BLOCK_CATEGORIES
 
     authentication_classes = (
         authentication.OAuth2AuthenticationAllowInactiveUser,
@@ -79,11 +79,7 @@ class CompletionViewMixin(object):
         """
         Return the appropriate serializer.
         """
-        if 'subsections' in self.get_extra_fields():
-            serializer = SubsectionCourseCompletionSerializer
-        else:
-            serializer = CourseCompletionSerializer
-        return serializer
+        return course_completion_serializer_factory(self.get_extra_fields())
 
 
 class CompletionListView(APIView, CompletionViewMixin):
@@ -100,7 +96,7 @@ class CompletionListView(APIView, CompletionViewMixin):
         """
         Handler for GET requests.
         """
-        self.paginator = self.pagination_class()
+        self.paginator = self.pagination_class()  # pylint: disable=attribute-defined-outside-init
         paginated = self.paginator.paginate_queryset(self.get_progress_queryset(), self.request, view=self)
         completions = [CourseCompletionFacade(progress) for progress in paginated]
         return self.paginator.get_paginated_response(self.get_serializer()(completions, many=True).data)

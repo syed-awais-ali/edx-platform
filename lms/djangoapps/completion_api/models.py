@@ -14,6 +14,12 @@ from openedx.core.djangoapps.content.course_overviews.models import CourseOvervi
 from progress.models import CourseModuleCompletion
 
 
+AGGREGATABLE_BLOCK_CATEGORIES = {
+    'chapter',
+    'sequential',
+    'vertical',
+}
+
 IGNORE_CATEGORIES = {
     # Structural types
     'course',
@@ -55,6 +61,43 @@ IGNORE_CATEGORIES = {
     'gp-v2-navigator-ask-ta',
     'gp-v2-navigator-private-discussion',
 }
+
+
+class CompletionsByCategory(property):
+    """
+    A reusable read-only property that returns the BlockCompletions for a given
+    block category.
+
+    Block categories must be chosen from within AGGREGATABLE_BLOCK_CATEGORIES.
+
+    This property requires the attribute self._completions_by_category to be
+    available on objects that implement it.
+    """
+    # pylint: disable=protected-access
+
+    def __init__(self, category):  # pylint: disable=super-init-not-called
+        if category not in AGGREGATABLE_BLOCK_CATEGORIES:
+            raise InvalidBlockCategory
+        self.category = category
+        self.fset = None
+        self.fdel = None
+
+    def __doc__(self):
+        return u'Completions of blocks with the category {:r}'.format(self.category)
+
+    def fget(self, obj):
+        """
+        Calculate completions at category level, caching the result on
+        the containing object.
+        """
+        if obj._completions_by_category is None:
+            obj._completions_by_category = {}
+        if self.category not in obj._completions_by_category:
+            completions = []
+            for block_key in obj.iter_block_keys_in_category(self.category):
+                completions.append(BlockCompletion(obj.user, block_key, self))
+            obj._completions_by_category[self.category] = completions
+        return obj._completions_by_category[self.category]
 
 
 class CompletionDataMixin(object):
@@ -173,15 +216,9 @@ class CourseCompletionFacade(CompletionDataMixin, object):
             if self.blocks.get_xblock_field(block, 'category') == category:
                 yield block
 
-    @property
-    def subsections(self):
-        """
-        Return the BlockCompletion for all subsections.
-        """
-        subsections = []
-        for block_key in self.iter_block_keys_in_category('sequential'):
-            subsections.append(BlockCompletion(self.user, block_key, self))
-        return subsections
+    chapters = CompletionsByCategory('chapter')
+    sequentials = CompletionsByCategory('sequential')
+    verticals = CompletionsByCategory('vertical')
 
 
 class BlockCompletion(CompletionDataMixin, object):
@@ -249,3 +286,10 @@ class BlockCompletion(CompletionDataMixin, object):
         The number of earned completions within self.block.
         """
         return float(len(self.completed_blocks))
+
+
+class InvalidBlockCategory(TypeError):
+    """
+    An exception raised when trying to access an invalid block category
+    """
+    pass
