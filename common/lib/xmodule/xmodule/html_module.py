@@ -79,6 +79,8 @@ class HtmlBlock(object):
         """
         Returns a JSON representation of the student_view of this XBlock,
         retrievable from the Course Block API.
+        Since this data is not user-specific, fields like `html` may contain
+        placeholders like %%USER_ID%%.
         """
         return {
             'html': self.data
