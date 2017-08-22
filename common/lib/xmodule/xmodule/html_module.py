@@ -75,6 +75,15 @@ class HtmlBlock(object):
         """
         return Fragment(self.get_html())
 
+    def student_view_data(self, context=None):
+        """
+        Returns a JSON representation of the student_view of this XBlock,
+        retrievable from the Course Block API.
+        """
+        return {
+            'html': self.data
+        }
+
     def get_html(self):
         """ Returns html required for rendering XModule. """
 
