@@ -75,12 +75,14 @@ class CompletionsByCategory(property):
     """
     # pylint: disable=protected-access
 
+    fset = None
+    fdel = None
+
     def __init__(self, category):  # pylint: disable=super-init-not-called
+        super(CompletionsByCategory, self).__init__(self.fget, self.fset, self.fdel, self.__doc__)
         if category not in AGGREGATABLE_BLOCK_CATEGORIES:
             raise InvalidBlockCategory
         self.category = category
-        self.fset = None
-        self.fdel = None
 
     def __doc__(self):
         return u'Completions of blocks with the category {:r}'.format(self.category)
@@ -90,7 +92,7 @@ class CompletionsByCategory(property):
         Calculate completions at category level, caching the result on
         the containing object.
         """
-        if obj._completions_by_category is None:
+        if getattr(obj, '_completions_by_category', None) is None:
             obj._completions_by_category = {}
         if self.category not in obj._completions_by_category:
             completions = []
@@ -142,6 +144,7 @@ class CourseCompletionFacade(CompletionDataMixin, object):
         self._collected = None
         self._completable_blocks = None
         self._inner = inner
+        self._completions_in_category = {}
 
     @property
     def collected(self):
@@ -216,9 +219,37 @@ class CourseCompletionFacade(CompletionDataMixin, object):
             if self.blocks.get_xblock_field(block, 'category') == category:
                 yield block
 
-    chapters = CompletionsByCategory('chapter')
-    sequentials = CompletionsByCategory('sequential')
-    verticals = CompletionsByCategory('vertical')
+    def get_completions_in_category(self, category):
+        """
+        Returns a list of BlockCompletions for each block of the requested category.
+        """
+        if category not in self._completions_in_category:
+            completions = [
+                BlockCompletion(self.user, block_key, self) for block_key in self.iter_block_keys_in_category(category)
+            ]
+            self._completions_in_category[category] = completions
+        return self._completions_in_category[category]
+
+    @property
+    def chapter(self):
+        """
+        Return a list of BlockCompletions for each chapter in the course.
+        """
+        return self.get_completions_in_category('chapter')
+
+    @property
+    def sequential(self):
+        """
+        Return a list of BlockCompletions for each sequential in the course.
+        """
+        return self.get_completions_in_category('sequential')
+
+    @property
+    def vertical(self):
+        """
+        Return a list of BlockCompletions for each vertical in the course.
+        """
+        return self.get_completions_in_category('vertical')
 
 
 class BlockCompletion(CompletionDataMixin, object):

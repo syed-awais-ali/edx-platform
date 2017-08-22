@@ -70,8 +70,8 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
         }
         self.assertEqual(response.data, expected)
 
-    def test_list_view_with_subsections(self):
-        response = self.client.get('/api/completion/v1/course/?extra_fields=subsections')
+    def test_list_view_with_sequentials(self):
+        response = self.client.get('/api/completion/v1/course/?extra_fields=sequential')
         self.assertEqual(response.status_code, 200)
         expected = {
             'pagination': {'count': 1, 'previous': None, 'num_pages': 1, 'next': None},
@@ -83,7 +83,7 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
                         'possible': 21.0,
                         'percent': 5,
                     },
-                    'subsections': [
+                    'sequential': [
                         {
                             'course_key': u'edX/toy/2012_Fall',
                             'block_key': u'i4x://edX/toy/sequential/vertical_sequential',
@@ -108,8 +108,8 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
         }
         self.assertEqual(response.data, expected)
 
-    def test_detail_view_with_subsections(self):
-        response = self.client.get('/api/completion/v1/course/edX/toy/2012_Fall/?extra_fields=subsections')
+    def test_detail_view_with_sequentials(self):
+        response = self.client.get('/api/completion/v1/course/edX/toy/2012_Fall/?extra_fields=sequential')
         self.assertEqual(response.status_code, 200)
         expected = {
             'course_key': 'edX/toy/2012_Fall',
@@ -118,7 +118,7 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
                 'possible': 21.0,
                 'percent': 5,
             },
-            'subsections': [
+            'sequential': [
                 {
                     'course_key': u'edX/toy/2012_Fall',
                     'block_key': u'i4x://edX/toy/sequential/vertical_sequential',

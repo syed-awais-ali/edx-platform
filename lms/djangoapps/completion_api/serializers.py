@@ -7,6 +7,7 @@ Serializers for the completion api
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 from rest_framework import serializers
+import six 
 
 
 class _CompletionSerializer(serializers.Serializer):
@@ -36,6 +37,23 @@ class BlockCompletionSerializer(serializers.Serializer):
     completion = _CompletionSerializer(source='*')
 
 
+def native_identifier(string):
+    """
+    Convert identifiers to the the native str type for the current version of 
+    python. This is required for the first argument to three-argument-`type()`.
+
+    This function expects all identifiers comprise only ascii characters.
+    """
+    if six.PY2:
+        if isinstance(string, unicode):
+            # Python 2 identifiers are required to be ascii
+            string = string.encode('ascii')
+    elif isinstance(string, bytes):
+        # Python 3 identifiers can technically be non-ascii, but don't.
+        string = string.decode('ascii')
+    return string
+
+
 def course_completion_serializer_factory(extra_fields):
     """
     Create a CourseCompletionSerializer that nests appropriate
@@ -44,8 +62,9 @@ def course_completion_serializer_factory(extra_fields):
     dunder_dict = {
         field: BlockCompletionSerializer(many=True) for field in extra_fields
     }
+    print(dunder_dict)
     return type(
-        'CourseCompletionSerializerWithAggregates',
-        [CourseCompletionSerializer],
+        native_identifier('CourseCompletionSerializerWithAggregates'),
+        (CourseCompletionSerializer,),
         dunder_dict,
     )
