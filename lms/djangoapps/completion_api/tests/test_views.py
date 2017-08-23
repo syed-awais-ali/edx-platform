@@ -27,6 +27,7 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
         cls.course = ToyCourseFactory.create()
 
     def setUp(self):
+        self.maxDiff = None
         super(CompletionViewTestCase, self).setUp()
         self.test_user = UserFactory.create(
             username='test_user',
@@ -62,8 +63,8 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
                     'course_key': 'edX/toy/2012_Fall',
                     'completion': {
                         'earned': 1.0,
-                        'possible': 21.0,
-                        'percent': 5,
+                        'possible': 12.0,
+                        'percent': 8,
                     },
                 }
             ],
@@ -80,8 +81,8 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
                     'course_key': 'edX/toy/2012_Fall',
                     'completion': {
                         'earned': 1.0,
-                        'possible': 21.0,
-                        'percent': 5,
+                        'possible': 12.0,
+                        'percent': 8,
                     },
                     'sequential': [
                         {
@@ -102,8 +103,8 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
             'course_key': 'edX/toy/2012_Fall',
             'completion': {
                 'earned': 1.0,
-                'possible': 21.0,
-                'percent': 5,
+                'possible': 12.0,
+                'percent': 8,
             },
         }
         self.assertEqual(response.data, expected)
@@ -115,8 +116,8 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
             'course_key': 'edX/toy/2012_Fall',
             'completion': {
                 'earned': 1.0,
-                'possible': 21.0,
-                'percent': 5,
+                'possible': 12.0,
+                'percent': 8,
             },
             'sequential': [
                 {

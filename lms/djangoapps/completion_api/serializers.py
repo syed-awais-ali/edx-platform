@@ -62,7 +62,6 @@ def course_completion_serializer_factory(extra_fields):
     dunder_dict = {
         field: BlockCompletionSerializer(many=True) for field in extra_fields
     }
-    print(dunder_dict)
     return type(
         native_identifier('CourseCompletionSerializerWithAggregates'),
         (CourseCompletionSerializer,),

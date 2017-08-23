@@ -5,6 +5,8 @@ wrapping progress extension models.
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import itertools
+
 from opaque_keys.edx.keys import UsageKey
 
 from lms.djangoapps.course_blocks.api import get_course_blocks
@@ -61,45 +63,6 @@ IGNORE_CATEGORIES = {
     'gp-v2-navigator-ask-ta',
     'gp-v2-navigator-private-discussion',
 }
-
-
-class CompletionsByCategory(property):
-    """
-    A reusable read-only property that returns the BlockCompletions for a given
-    block category.
-
-    Block categories must be chosen from within AGGREGATABLE_BLOCK_CATEGORIES.
-
-    This property requires the attribute self._completions_by_category to be
-    available on objects that implement it.
-    """
-    # pylint: disable=protected-access
-
-    fset = None
-    fdel = None
-
-    def __init__(self, category):  # pylint: disable=super-init-not-called
-        super(CompletionsByCategory, self).__init__(self.fget, self.fset, self.fdel, self.__doc__)
-        if category not in AGGREGATABLE_BLOCK_CATEGORIES:
-            raise InvalidBlockCategory
-        self.category = category
-
-    def __doc__(self):
-        return u'Completions of blocks with the category {:r}'.format(self.category)
-
-    def fget(self, obj):
-        """
-        Calculate completions at category level, caching the result on
-        the containing object.
-        """
-        if getattr(obj, '_completions_by_category', None) is None:
-            obj._completions_by_category = {}
-        if self.category not in obj._completions_by_category:
-            completions = []
-            for block_key in obj.iter_block_keys_in_category(self.category):
-                completions.append(BlockCompletion(obj.user, block_key, self))
-            obj._completions_by_category[self.category] = completions
-        return obj._completions_by_category[self.category]
 
 
 class CompletionDataMixin(object):
@@ -174,20 +137,29 @@ class CourseCompletionFacade(CompletionDataMixin, object):
             )
         return self._blocks
 
+    def _recurse_completable_blocks(self, block):
+        if self.blocks.get_xblock_field(block, 'category') not in IGNORE_CATEGORIES:
+            return [block]
+        return list(itertools.chain(
+            *[self._recurse_completable_blocks(child) for child in self.blocks.get_children(block)]
+        ))
+
     @property
     def completable_blocks(self):
         """
-        Return a set of UsageKeys for all blocks that can be completed that are
+        Return a list of UsageKeys for all blocks that can be completed that are
         visible to self.user.
 
         This method encapsulates the facade's access to the modulestore, making
         it a useful candidate for mocking.
+
+        In case the course structure is a DAG, nodes with multiple parents will
+        be represented multiple times in the list.
         """
         if self._completable_blocks is None:
-            self._completable_blocks = {
-                block for block in self.blocks
-                if self.blocks.get_xblock_field(block, 'category') not in IGNORE_CATEGORIES
-            }
+            self._completable_blocks = self._recurse_completable_blocks(self.blocks.root_block_usage_key)
+        for block in self._completable_blocks:
+            print(block)
         return self._completable_blocks
 
     @property
@@ -301,7 +273,7 @@ class BlockCompletion(CompletionDataMixin, object):
     @property
     def completed_blocks(self):
         """
-        Return the set of UsageKeys of all blocks within self.block that have been
+        Return the list of UsageKeys of all blocks within self.block that have been
         completed by self.user.
         """
         modules = CourseModuleCompletion.objects.filter(
@@ -309,7 +281,7 @@ class BlockCompletion(CompletionDataMixin, object):
             course_id=self.course_key
         )
         module_keys = {UsageKey.from_string(mod.content_id).map_into_course(self.course_key) for mod in modules}
-        return module_keys & self.completable_blocks
+        return [block for block in self.completable_blocks if block in module_keys]
 
     @property
     def earned(self):

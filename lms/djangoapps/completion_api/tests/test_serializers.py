@@ -149,8 +149,8 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
             completions=0,
         )
         completion = CourseCompletionFacade(progress)
-        self.assertEqual(completion.earned, 0)
-        self.assertEqual(completion.possible, 21)
+        self.assertEqual(completion.earned, 0.0)
+        self.assertEqual(completion.possible, 12.0)
         serial = course_completion_serializer_factory([])(completion)
         self.assertEqual(
             serial.data,
@@ -158,7 +158,7 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
                 'course_key': 'edX/toy/2012_Fall',
                 'completion': {
                     'earned': 0.0,
-                    'possible': 21.0,
+                    'possible': 12.0,
                     'percent': 0,
                 }
             }
@@ -172,7 +172,8 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
         )
         completion = CourseCompletionFacade(progress)
         self.assertEqual(completion.earned, 3)
-        self.assertEqual(completion.possible, 21)
+        self.assertEqual(completion.possible, 12)
+        # A sequential exists, but isn't included in the output
         self.assertEqual(len(completion.sequential), 1)
         serial = course_completion_serializer_factory([])(completion)
         self.assertEqual(
@@ -181,8 +182,8 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
                 'course_key': 'edX/toy/2012_Fall',
                 'completion': {
                     'earned': 3.0,
-                    'possible': 21.0,
-                    'percent': 14,
+                    'possible': 12.0,
+                    'percent': 25,
                 }
             }
         )
@@ -208,8 +209,8 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
                 'course_key': 'edX/toy/2012_Fall',
                 'completion': {
                     'earned': 1.0,
-                    'possible': 21.0,
-                    'percent': 5,
+                    'possible': 12.0,
+                    'percent': 8,
                 },
                 'sequential': [
                     {
@@ -242,8 +243,8 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
                 'course_key': 'edX/toy/2012_Fall',
                 'completion': {
                     'earned': 1.0,
-                    'possible': 21.0,
-                    'percent': 5,
+                    'possible': 12.0,
+                    'percent': 8,
                 },
                 'chapter': [
                     {
