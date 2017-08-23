@@ -7,7 +7,7 @@ Serializers for the completion api
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 from rest_framework import serializers
-import six 
+import six
 
 
 class _CompletionSerializer(serializers.Serializer):
@@ -39,7 +39,7 @@ class BlockCompletionSerializer(serializers.Serializer):
 
 def native_identifier(string):
     """
-    Convert identifiers to the the native str type for the current version of 
+    Convert identifiers to the the native str type for the current version of
     python. This is required for the first argument to three-argument-`type()`.
 
     This function expects all identifiers comprise only ascii characters.

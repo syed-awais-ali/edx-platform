@@ -240,11 +240,11 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
         self.assertEqual(
             serial.data,
             {
-                'course_key': u'edX/toy/2012_Fall', 
-                'completion': {'earned': 1.0, 'possible': 12.0, 'percent': 8}, 
+                'course_key': u'edX/toy/2012_Fall',
+                'completion': {'earned': 1.0, 'possible': 12.0, 'percent': 8},
                 u'chapter': [
                     {
-                        'course_key': u'edX/toy/2012_Fall', 
+                        'course_key': u'edX/toy/2012_Fall',
                         'block_key': u'i4x://edX/toy/chapter/poll_test',
                         'completion': {'earned': 0.0, 'possible': 1.0, 'percent': 0},
                     },
