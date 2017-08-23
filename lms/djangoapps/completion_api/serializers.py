@@ -54,13 +54,13 @@ def native_identifier(string):
     return string
 
 
-def course_completion_serializer_factory(extra_fields):
+def course_completion_serializer_factory(requested_fields):
     """
     Create a CourseCompletionSerializer that nests appropriate
-    BlockCompletionSerializers for the specified extra_fields.
+    BlockCompletionSerializers for the specified requested_fields.
     """
     dunder_dict = {
-        field: BlockCompletionSerializer(many=True) for field in extra_fields
+        field: BlockCompletionSerializer(many=True) for field in requested_fields
     }
     return type(
         native_identifier('CourseCompletionSerializerWithAggregates'),

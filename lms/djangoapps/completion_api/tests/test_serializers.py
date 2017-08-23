@@ -222,7 +222,7 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
             }
         )
 
-    def test_with_all_extra_fields(self):
+    def test_with_all_requested_fields(self):
         block_key = UsageKey.from_string("i4x://edX/toy/video/sample_video")
         block_key = block_key.map_into_course(self.course.id)
         models.CourseModuleCompletion.objects.create(
@@ -240,15 +240,11 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
         self.assertEqual(
             serial.data,
             {
-                'course_key': 'edX/toy/2012_Fall',
-                'completion': {
-                    'earned': 1.0,
-                    'possible': 12.0,
-                    'percent': 8,
-                },
-                'chapter': [
+                'course_key': u'edX/toy/2012_Fall', 
+                'completion': {'earned': 1.0, 'possible': 12.0, 'percent': 8}, 
+                u'chapter': [
                     {
-                        'course_key': u'edX/toy/2012_Fall',
+                        'course_key': u'edX/toy/2012_Fall', 
                         'block_key': u'i4x://edX/toy/chapter/poll_test',
                         'completion': {'earned': 0.0, 'possible': 1.0, 'percent': 0},
                     },
@@ -270,22 +266,22 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
                     {
                         'course_key': u'edX/toy/2012_Fall',
                         'block_key': u'i4x://edX/toy/chapter/Overview',
-                        'completion': {'earned': 0.0, 'possible': 13.0, 'percent': 0},
+                        'completion': {'earned': 0.0, 'possible': 4.0, 'percent': 0},
                     },
                 ],
-                'sequential': [
+                u'sequential': [
                     {
                         'course_key': u'edX/toy/2012_Fall',
                         'block_key': u'i4x://edX/toy/sequential/vertical_sequential',
                         'completion': {'earned': 1.0, 'possible': 5.0, 'percent': 20},
                     },
                 ],
-                'vertical': [
+                u'vertical': [
                     {
                         'course_key': u'edX/toy/2012_Fall',
                         'block_key': u'i4x://edX/toy/vertical/vertical_test',
-                        'completion': {'earned': 1.0, 'possible': 4.0, 'percent': 25},
-                    },
+                        'completion': {'earned': 1.0, 'possible': 4.0, 'percent': 25}
+                    }
                 ]
             }
         )

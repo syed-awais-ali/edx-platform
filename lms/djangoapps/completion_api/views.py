@@ -25,7 +25,7 @@ class CompletionViewMixin(object):
     Common functionality for completion views.
     """
 
-    _allowed_extra_fields = AGGREGATABLE_BLOCK_CATEGORIES
+    _allowed_requested_fields = AGGREGATABLE_BLOCK_CATEGORIES
 
     authentication_classes = (
         authentication.OAuth2AuthenticationAllowInactiveUser,
@@ -64,22 +64,22 @@ class CompletionViewMixin(object):
         objs = StudentProgress.objects.filter(user=self.get_user())
         return objs
 
-    def get_extra_fields(self):
+    def get_requested_fields(self):
         """
-        Parse and return value for extra_fields parameter.
+        Parse and return value for requested_fields parameter.
         """
-        fields = set(field for field in self.request.GET.get('extra_fields', '').split(',') if field)
-        diff = fields - self._allowed_extra_fields
+        fields = set(field for field in self.request.GET.get('requested_fields', '').split(',') if field)
+        diff = fields - self._allowed_requested_fields
         if diff:
-            msg = 'Invalid extra_fields value: {}.  Allowed values: {}'
-            raise ParseError(msg.format(fields, self._allowed_extra_fields))
+            msg = 'Invalid requested_fields value: {}.  Allowed values: {}'
+            raise ParseError(msg.format(fields, self._allowed_requested_fields))
         return fields
 
     def get_serializer(self):
         """
         Return the appropriate serializer.
         """
-        return course_completion_serializer_factory(self.get_extra_fields())
+        return course_completion_serializer_factory(self.get_requested_fields())
 
 
 class CompletionListView(APIView, CompletionViewMixin):

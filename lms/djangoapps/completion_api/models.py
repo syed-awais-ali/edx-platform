@@ -72,8 +72,34 @@ class CompletionDataMixin(object):
     Classes using this mixin must implement:
 
         * self.earned (float)
-        * self.completable_blocks (Collection<UsageKey>)
+        * self.blocks (BlockStructureBlockData)
     """
+
+    def _recurse_completable_blocks(self, block):
+        """
+        Return a list of all completable blocks within the subtree under `block`.
+        """
+        if self.blocks.get_xblock_field(block, 'category') not in IGNORE_CATEGORIES:
+            return [block]
+        return list(itertools.chain(
+            *[self._recurse_completable_blocks(child) for child in self.blocks.get_children(block)]
+        ))
+
+    @property
+    def completable_blocks(self):
+        """
+        Return a list of UsageKeys for all blocks that can be completed that are
+        visible to self.user.
+
+        This method encapsulates the facade's access to the modulestore, making
+        it a useful candidate for mocking.
+
+        In case the course structure is a DAG, nodes with multiple parents will
+        be represented multiple times in the list.
+        """
+        if self._completable_blocks is None:
+            self._completable_blocks = self._recurse_completable_blocks(self.blocks.root_block_usage_key)
+        return self._completable_blocks
 
     @property
     def possible(self):
@@ -136,31 +162,6 @@ class CourseCompletionFacade(CompletionDataMixin, object):
                 collected_block_structure=self.collected,
             )
         return self._blocks
-
-    def _recurse_completable_blocks(self, block):
-        if self.blocks.get_xblock_field(block, 'category') not in IGNORE_CATEGORIES:
-            return [block]
-        return list(itertools.chain(
-            *[self._recurse_completable_blocks(child) for child in self.blocks.get_children(block)]
-        ))
-
-    @property
-    def completable_blocks(self):
-        """
-        Return a list of UsageKeys for all blocks that can be completed that are
-        visible to self.user.
-
-        This method encapsulates the facade's access to the modulestore, making
-        it a useful candidate for mocking.
-
-        In case the course structure is a DAG, nodes with multiple parents will
-        be represented multiple times in the list.
-        """
-        if self._completable_blocks is None:
-            self._completable_blocks = self._recurse_completable_blocks(self.blocks.root_block_usage_key)
-        for block in self._completable_blocks:
-            print(block)
-        return self._completable_blocks
 
     @property
     def user(self):
@@ -255,22 +256,6 @@ class BlockCompletion(CompletionDataMixin, object):
         return self._blocks
 
     @property
-    def completable_blocks(self):
-        """
-        Return the set of UsageKeys of all blocks within self.block that can be
-        completed by self.user.
-
-        This method encapsulates the class' access to the modulestore, making
-        it a useful candidate for mocking.
-        """
-        if self._completable_blocks is None:
-            self._completable_blocks = {
-                block.map_into_course(self.course_key) for block in self.blocks
-                if self.blocks.get_xblock_field(block, 'category') not in IGNORE_CATEGORIES
-            }
-        return self._completable_blocks
-
-    @property
     def completed_blocks(self):
         """
         Return the list of UsageKeys of all blocks within self.block that have been
@@ -289,10 +274,3 @@ class BlockCompletion(CompletionDataMixin, object):
         The number of earned completions within self.block.
         """
         return float(len(self.completed_blocks))
-
-
-class InvalidBlockCategory(TypeError):
-    """
-    An exception raised when trying to access an invalid block category
-    """
-    pass

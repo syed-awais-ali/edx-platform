@@ -27,7 +27,6 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
         cls.course = ToyCourseFactory.create()
 
     def setUp(self):
-        self.maxDiff = None
         super(CompletionViewTestCase, self).setUp()
         self.test_user = UserFactory.create(
             username='test_user',
@@ -72,7 +71,7 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
         self.assertEqual(response.data, expected)
 
     def test_list_view_with_sequentials(self):
-        response = self.client.get('/api/completion/v1/course/?extra_fields=sequential')
+        response = self.client.get('/api/completion/v1/course/?requested_fields=sequential')
         self.assertEqual(response.status_code, 200)
         expected = {
             'pagination': {'count': 1, 'previous': None, 'num_pages': 1, 'next': None},
@@ -110,7 +109,7 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
         self.assertEqual(response.data, expected)
 
     def test_detail_view_with_sequentials(self):
-        response = self.client.get('/api/completion/v1/course/edX/toy/2012_Fall/?extra_fields=sequential')
+        response = self.client.get('/api/completion/v1/course/edX/toy/2012_Fall/?requested_fields=sequential')
         self.assertEqual(response.status_code, 200)
         expected = {
             'course_key': 'edX/toy/2012_Fall',
