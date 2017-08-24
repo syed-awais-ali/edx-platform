@@ -16,7 +16,7 @@ class _CompletionSerializer(serializers.Serializer):
     """
     earned = serializers.FloatField()
     possible = serializers.FloatField()
-    percent = serializers.IntegerField()
+    ratio = serializers.FloatField()
 
 
 class CourseCompletionSerializer(serializers.Serializer):

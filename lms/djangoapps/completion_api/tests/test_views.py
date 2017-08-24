@@ -63,7 +63,7 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
                     'completion': {
                         'earned': 1.0,
                         'possible': 12.0,
-                        'percent': 8,
+                        'ratio': 1/12,
                     },
                 }
             ],
@@ -81,13 +81,13 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
                     'completion': {
                         'earned': 1.0,
                         'possible': 12.0,
-                        'percent': 8,
+                        'ratio': 1/12,
                     },
                     'sequential': [
                         {
                             'course_key': u'edX/toy/2012_Fall',
                             'block_key': u'i4x://edX/toy/sequential/vertical_sequential',
-                            'completion': {'earned': 1.0, 'possible': 5.0, 'percent': 20},
+                            'completion': {'earned': 1.0, 'possible': 5.0, 'ratio': 0.2},
                         },
                     ]
                 }
@@ -103,7 +103,7 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
             'completion': {
                 'earned': 1.0,
                 'possible': 12.0,
-                'percent': 8,
+                'ratio': 1/12,
             },
         }
         self.assertEqual(response.data, expected)
@@ -116,13 +116,13 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
             'completion': {
                 'earned': 1.0,
                 'possible': 12.0,
-                'percent': 8,
+                'ratio': 1/12,
             },
             'sequential': [
                 {
                     'course_key': u'edX/toy/2012_Fall',
                     'block_key': u'i4x://edX/toy/sequential/vertical_sequential',
-                    'completion': {'earned': 1.0, 'possible': 5.0, 'percent': 20},
+                    'completion': {'earned': 1.0, 'possible': 5.0, 'ratio': 0.2},
                 },
             ]
         }

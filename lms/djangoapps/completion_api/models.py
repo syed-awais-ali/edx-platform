@@ -110,17 +110,17 @@ class CompletionDataMixin(object):
         return float(len(self.completable_blocks))
 
     @property
-    def percent(self):
+    def ratio(self):
         """
-        Return the percent of the course completed by the user.
+        Return the fraction of the course completed by the user.
 
-        Percent is returned as an integer between 0 and 100.
+        Ratio is returned as a float in the range [0.0, 1.0].
         """
         if self.possible == 0:
-            percent = 100
+            ratio = 1.0
         else:
-            percent = int(round(100 * self.earned / self.possible))
-        return percent
+            ratio = self.earned / self.possible
+        return ratio
 
 
 class CourseCompletionFacade(CompletionDataMixin, object):

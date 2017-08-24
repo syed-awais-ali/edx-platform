@@ -44,8 +44,8 @@ class MockCourseCompletion(CourseCompletionFacade):
     @property
     def sequential(self):
         return [
-            {'course_key': self.course_key, 'block_key': 'block1', 'earned': 6.0, 'possible': 7.0, 'percent': 86},
-            {'course_key': self.course_key, 'block_key': 'block2', 'earned': 10.0, 'possible': 12.0, 'percent': 83},
+            {'course_key': self.course_key, 'block_key': 'block1', 'earned': 6.0, 'possible': 7.0, 'ratio': 6/7},
+            {'course_key': self.course_key, 'block_key': 'block2', 'earned': 10.0, 'possible': 12.0, 'ratio': 5/6},
         ]
 
 
@@ -70,12 +70,12 @@ class CourseCompletionSerializerTestCase(TestCase):
                     {
                         'course_key': 'course-v1:abc+def+ghi',
                         'block_key': 'block1',
-                        'completion': {'earned': 6.0, 'possible': 7.0, 'percent': 86},
+                        'completion': {'earned': 6.0, 'possible': 7.0, 'ratio': 6/7},
                     },
                     {
                         'course_key': 'course-v1:abc+def+ghi',
                         'block_key': 'block2',
-                        'completion': {'earned': 10.0, 'possible': 12.0, 'percent': 83},
+                        'completion': {'earned': 10.0, 'possible': 12.0, 'ratio': 5/6},
                     },
                 ]
             }
@@ -95,7 +95,7 @@ class CourseCompletionSerializerTestCase(TestCase):
             'completion': {
                 'earned': 16.0,
                 'possible': 19.0,
-                'percent': 84,
+                'ratio': 16/19,
             },
         }
         expected.update(extra_body)
@@ -118,7 +118,7 @@ class CourseCompletionSerializerTestCase(TestCase):
             {
                 'earned': 0.0,
                 'possible': 0.0,
-                'percent': 100,
+                'ratio': 1.0,
             },
         )
 
@@ -159,7 +159,7 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
                 'completion': {
                     'earned': 0.0,
                     'possible': 12.0,
-                    'percent': 0,
+                    'ratio': 0.0,
                 }
             }
         )
@@ -183,7 +183,7 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
                 'completion': {
                     'earned': 3.0,
                     'possible': 12.0,
-                    'percent': 25,
+                    'ratio': 1/4,
                 }
             }
         )
@@ -210,13 +210,13 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
                 'completion': {
                     'earned': 1.0,
                     'possible': 12.0,
-                    'percent': 8,
+                    'ratio': 1/12,
                 },
                 'sequential': [
                     {
                         'course_key': u'edX/toy/2012_Fall',
                         'block_key': u'i4x://edX/toy/sequential/vertical_sequential',
-                        'completion': {'earned': 1.0, 'possible': 5.0, 'percent': 20},
+                        'completion': {'earned': 1.0, 'possible': 5.0, 'ratio': 0.20},
                     },
                 ]
             }
@@ -241,46 +241,46 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
             serial.data,
             {
                 'course_key': u'edX/toy/2012_Fall',
-                'completion': {'earned': 1.0, 'possible': 12.0, 'percent': 8},
+                'completion': {'earned': 1.0, 'possible': 12.0, 'ratio': 1/12},
                 u'chapter': [
                     {
                         'course_key': u'edX/toy/2012_Fall',
                         'block_key': u'i4x://edX/toy/chapter/poll_test',
-                        'completion': {'earned': 0.0, 'possible': 1.0, 'percent': 0},
+                        'completion': {'earned': 0.0, 'possible': 1.0, 'ratio': 0.0},
                     },
                     {
                         'course_key': u'edX/toy/2012_Fall',
                         'block_key': u'i4x://edX/toy/chapter/secret:magic',
-                        'completion': {'earned': 0.0, 'possible': 1.0, 'percent': 0},
+                        'completion': {'earned': 0.0, 'possible': 1.0, 'ratio': 0.0},
                     },
                     {
                         'course_key': u'edX/toy/2012_Fall',
                         'block_key': u'i4x://edX/toy/chapter/handout_container',
-                        'completion': {'earned': 0.0, 'possible': 1.0, 'percent': 0},
+                        'completion': {'earned': 0.0, 'possible': 1.0, 'ratio': 0.0},
                     },
                     {
                         'course_key': u'edX/toy/2012_Fall',
                         'block_key': u'i4x://edX/toy/chapter/vertical_container',
-                        'completion': {'earned': 1.0, 'possible': 5.0, 'percent': 20},
+                        'completion': {'earned': 1.0, 'possible': 5.0, 'ratio': 0.2},
                     },
                     {
                         'course_key': u'edX/toy/2012_Fall',
                         'block_key': u'i4x://edX/toy/chapter/Overview',
-                        'completion': {'earned': 0.0, 'possible': 4.0, 'percent': 0},
+                        'completion': {'earned': 0.0, 'possible': 4.0, 'ratio': 0.0},
                     },
                 ],
                 u'sequential': [
                     {
                         'course_key': u'edX/toy/2012_Fall',
                         'block_key': u'i4x://edX/toy/sequential/vertical_sequential',
-                        'completion': {'earned': 1.0, 'possible': 5.0, 'percent': 20},
+                        'completion': {'earned': 1.0, 'possible': 5.0, 'ratio': 0.2},
                     },
                 ],
                 u'vertical': [
                     {
                         'course_key': u'edX/toy/2012_Fall',
                         'block_key': u'i4x://edX/toy/vertical/vertical_test',
-                        'completion': {'earned': 1.0, 'possible': 4.0, 'percent': 25}
+                        'completion': {'earned': 1.0, 'possible': 4.0, 'ratio': 0.25}
                     }
                 ]
             }
