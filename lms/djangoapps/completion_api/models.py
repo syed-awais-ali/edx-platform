@@ -16,19 +16,14 @@ from openedx.core.djangoapps.content.course_overviews.models import CourseOvervi
 from progress.models import CourseModuleCompletion
 
 
-AGGREGATABLE_BLOCK_CATEGORIES = {
+AGGREGATE_CATEGORIES = {
+    'course',
     'chapter',
     'sequential',
     'vertical',
 }
 
 IGNORE_CATEGORIES = {
-    # Structural types
-    'course',
-    'chapter',
-    'sequential',
-    'vertical',
-
     # Non-completable types
     'discussion-course',
     'group-project',
@@ -37,31 +32,6 @@ IGNORE_CATEGORIES = {
 
     # GP v2 categories
     'gp-v2-project',
-    'gp-v2-activity',
-    'gp-v2-stage-basic',
-    'gp-v2-stage-completion',
-    'gp-v2-stage-submission',
-    'gp-v2-stage-team-evaluation',
-    'gp-v2-stage-peer-review',
-    'gp-v2-stage-evaluation-display',
-    'gp-v2-stage-grade-display',
-    'gp-v2-resource',
-    'gp-v2-video-resource',
-    'gp-v2-submission',
-    'gp-v2-peer-selector',
-    'gp-v2-group-selector',
-    'gp-v2-review-question',
-    'gp-v2-peer-assessment',
-    'gp-v2-group-assessment',
-    'gp-v2-static-submissions',
-    'gp-v2-static-grade-rubric',
-    'gp-v2-project-team',
-    'gp-v2-navigator',
-    'gp-v2-navigator-navigation',
-    'gp-v2-navigator-resources',
-    'gp-v2-navigator-submissions',
-    'gp-v2-navigator-ask-ta',
-    'gp-v2-navigator-private-discussion',
 }
 
 
@@ -75,15 +45,21 @@ class CompletionDataMixin(object):
         * self.blocks (BlockStructureBlockData)
     """
 
+    _completable_blocks = None
+
     def _recurse_completable_blocks(self, block):
         """
         Return a list of all completable blocks within the subtree under `block`.
         """
-        if self.blocks.get_xblock_field(block, 'category') not in IGNORE_CATEGORIES:
+        if block.block_type in IGNORE_CATEGORIES:
+            return []
+        elif block.block_type in AGGREGATE_CATEGORIES:
+            return list(itertools.chain(
+                *[self._recurse_completable_blocks(child)
+                  for child in self.blocks.get_children(block)]
+            ))
+        else:
             return [block]
-        return list(itertools.chain(
-            *[self._recurse_completable_blocks(child) for child in self.blocks.get_children(block)]
-        ))
 
     @property
     def completable_blocks(self):
@@ -128,10 +104,11 @@ class CourseCompletionFacade(CompletionDataMixin, object):
     Facade wrapping progress.models.StudentProgress model.
     """
 
+    _blocks = None
+    _collected = None
+    _completed_modules = None
+
     def __init__(self, inner):
-        self._blocks = None
-        self._collected = None
-        self._completable_blocks = None
         self._inner = inner
         self._completions_in_category = {}
 
@@ -188,9 +165,7 @@ class CourseCompletionFacade(CompletionDataMixin, object):
         """
         Yields the UsageKey for all blocks of the specified category.
         """
-        for block in self.blocks:
-            if self.blocks.get_xblock_field(block, 'category') == category:
-                yield block
+        return (block for block in self.blocks if block.block_type == category)
 
     def get_completions_in_category(self, category):
         """
@@ -202,6 +177,22 @@ class CourseCompletionFacade(CompletionDataMixin, object):
             ]
             self._completions_in_category[category] = completions
         return self._completions_in_category[category]
+
+    @property
+    def completed_modules(self):
+        """
+        Returns a list of usage keys for modules that have been completed.
+        """
+        if self._completed_modules is None:
+            modules = CourseModuleCompletion.objects.filter(
+                user=self.user,
+                course_id=self.course_key
+            )
+            self._completed_modules = {
+                UsageKey.from_string(mod.content_id).map_into_course(self.course_key)
+                for mod in modules
+            }
+        return self._completed_modules
 
     @property
     def chapter(self):
@@ -237,6 +228,7 @@ class BlockCompletion(CompletionDataMixin, object):
         self.course_completion = course_completion
         self._blocks = None
         self._completable_blocks = None
+        self._completed_blocks = None
 
     @property
     def blocks(self):
@@ -261,12 +253,10 @@ class BlockCompletion(CompletionDataMixin, object):
         Return the list of UsageKeys of all blocks within self.block that have been
         completed by self.user.
         """
-        modules = CourseModuleCompletion.objects.filter(
-            user=self.user,
-            course_id=self.course_key
-        )
-        module_keys = {UsageKey.from_string(mod.content_id).map_into_course(self.course_key) for mod in modules}
-        return [block for block in self.completable_blocks if block in module_keys]
+        if self._completed_blocks is None:
+            modules = self.course_completion.completed_modules
+            self._completed_blocks = [blk for blk in self.completable_blocks if blk in modules]
+        return self._completed_blocks
 
     @property
     def earned(self):

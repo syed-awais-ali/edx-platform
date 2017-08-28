@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 
 from openedx.core.lib.api import authentication, paginators
 
-from .models import CourseCompletionFacade, AGGREGATABLE_BLOCK_CATEGORIES
+from .models import CourseCompletionFacade, AGGREGATE_CATEGORIES
 from .serializers import course_completion_serializer_factory
 
 User = get_user_model()  # pylint: disable=invalid-name
@@ -25,7 +25,7 @@ class CompletionViewMixin(object):
     Common functionality for completion views.
     """
 
-    _allowed_requested_fields = AGGREGATABLE_BLOCK_CATEGORIES
+    _allowed_requested_fields = AGGREGATE_CATEGORIES
 
     authentication_classes = (
         authentication.OAuth2AuthenticationAllowInactiveUser,

@@ -4,6 +4,8 @@ Test serialization of completion data.
 
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+from operator import itemgetter
+
 import ddt
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -38,14 +40,14 @@ class MockCourseCompletion(CourseCompletionFacade):
         return self._possible
 
     @possible.setter
-    def possible(self, value):
+    def possible(self, value):  # pylint: disable=arguments-differ
         self._possible = value
 
     @property
     def sequential(self):
         return [
-            {'course_key': self.course_key, 'block_key': 'block1', 'earned': 6.0, 'possible': 7.0, 'ratio': 6/7},
-            {'course_key': self.course_key, 'block_key': 'block2', 'earned': 10.0, 'possible': 12.0, 'ratio': 5/6},
+            {'course_key': self.course_key, 'block_key': 'block1', 'earned': 6.0, 'possible': 7.0, 'ratio': 6 / 7},
+            {'course_key': self.course_key, 'block_key': 'block2', 'earned': 10.0, 'possible': 12.0, 'ratio': 5 / 6},
         ]
 
 
@@ -56,6 +58,7 @@ class CourseCompletionSerializerTestCase(TestCase):
     """
 
     def setUp(self):
+        super(CourseCompletionSerializerTestCase, self).setUp()
         self.test_user = User.objects.create(
             username='test_user',
             email='test_user@example.com',
@@ -70,12 +73,12 @@ class CourseCompletionSerializerTestCase(TestCase):
                     {
                         'course_key': 'course-v1:abc+def+ghi',
                         'block_key': 'block1',
-                        'completion': {'earned': 6.0, 'possible': 7.0, 'ratio': 6/7},
+                        'completion': {'earned': 6.0, 'possible': 7.0, 'ratio': 6 / 7},
                     },
                     {
                         'course_key': 'course-v1:abc+def+ghi',
                         'block_key': 'block2',
-                        'completion': {'earned': 10.0, 'possible': 12.0, 'ratio': 5/6},
+                        'completion': {'earned': 10.0, 'possible': 12.0, 'ratio': 5 / 6},
                     },
                 ]
             }
@@ -95,7 +98,7 @@ class CourseCompletionSerializerTestCase(TestCase):
             'completion': {
                 'earned': 16.0,
                 'possible': 19.0,
-                'ratio': 16/19,
+                'ratio': 16 / 19,
             },
         }
         expected.update(extra_body)
@@ -183,7 +186,7 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
                 'completion': {
                     'earned': 3.0,
                     'possible': 12.0,
-                    'ratio': 1/4,
+                    'ratio': 1 / 4,
                 }
             }
         )
@@ -210,7 +213,7 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
                 'completion': {
                     'earned': 1.0,
                     'possible': 12.0,
-                    'ratio': 1/12,
+                    'ratio': 1 / 12,
                 },
                 'sequential': [
                     {
@@ -237,38 +240,45 @@ class ToyCourseCompletionTestCase(SharedModuleStoreTestCase):
         )
         completion = CourseCompletionFacade(progress)
         serial = course_completion_serializer_factory(['chapter', 'sequential', 'vertical'])(completion)
+        data = serial.data
+        # Modulestore returns the blocks in non-deterministic order.
+        # Don't require a particular ordering here.
+        chapters = sorted(data.pop('chapter'), key=itemgetter('block_key'))
         self.assertEqual(
-            serial.data,
+            chapters,
+            [
+                {
+                    'course_key': u'edX/toy/2012_Fall',
+                    'block_key': u'i4x://edX/toy/chapter/Overview',
+                    'completion': {'earned': 0.0, 'possible': 4.0, 'ratio': 0.0},
+                },
+                {
+                    'course_key': u'edX/toy/2012_Fall',
+                    'block_key': u'i4x://edX/toy/chapter/handout_container',
+                    'completion': {'earned': 0.0, 'possible': 1.0, 'ratio': 0.0},
+                },
+                {
+                    'course_key': u'edX/toy/2012_Fall',
+                    'block_key': u'i4x://edX/toy/chapter/poll_test',
+                    'completion': {'earned': 0.0, 'possible': 1.0, 'ratio': 0.0},
+                },
+                {
+                    'course_key': u'edX/toy/2012_Fall',
+                    'block_key': u'i4x://edX/toy/chapter/secret:magic',
+                    'completion': {'earned': 0.0, 'possible': 1.0, 'ratio': 0.0},
+                },
+                {
+                    'course_key': u'edX/toy/2012_Fall',
+                    'block_key': u'i4x://edX/toy/chapter/vertical_container',
+                    'completion': {'earned': 1.0, 'possible': 5.0, 'ratio': 0.2},
+                },
+            ]
+        )
+        self.assertEqual(
+            data,
             {
                 'course_key': u'edX/toy/2012_Fall',
-                'completion': {'earned': 1.0, 'possible': 12.0, 'ratio': 1/12},
-                u'chapter': [
-                    {
-                        'course_key': u'edX/toy/2012_Fall',
-                        'block_key': u'i4x://edX/toy/chapter/poll_test',
-                        'completion': {'earned': 0.0, 'possible': 1.0, 'ratio': 0.0},
-                    },
-                    {
-                        'course_key': u'edX/toy/2012_Fall',
-                        'block_key': u'i4x://edX/toy/chapter/secret:magic',
-                        'completion': {'earned': 0.0, 'possible': 1.0, 'ratio': 0.0},
-                    },
-                    {
-                        'course_key': u'edX/toy/2012_Fall',
-                        'block_key': u'i4x://edX/toy/chapter/handout_container',
-                        'completion': {'earned': 0.0, 'possible': 1.0, 'ratio': 0.0},
-                    },
-                    {
-                        'course_key': u'edX/toy/2012_Fall',
-                        'block_key': u'i4x://edX/toy/chapter/vertical_container',
-                        'completion': {'earned': 1.0, 'possible': 5.0, 'ratio': 0.2},
-                    },
-                    {
-                        'course_key': u'edX/toy/2012_Fall',
-                        'block_key': u'i4x://edX/toy/chapter/Overview',
-                        'completion': {'earned': 0.0, 'possible': 4.0, 'ratio': 0.0},
-                    },
-                ],
+                'completion': {'earned': 1.0, 'possible': 12.0, 'ratio': 1 / 12},
                 u'sequential': [
                     {
                         'course_key': u'edX/toy/2012_Fall',

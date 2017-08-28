@@ -53,7 +53,7 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
         )
 
     def test_list_view(self):
-        response = self.client.get('/api/completion/v1/course/')
+        response = self.client.get('/api/completion/v0/course/')
         self.assertEqual(response.status_code, 200)
         expected = {
             'pagination': {'count': 1, 'previous': None, 'num_pages': 1, 'next': None},
@@ -63,15 +63,15 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
                     'completion': {
                         'earned': 1.0,
                         'possible': 12.0,
-                        'ratio': 1/12,
+                        'ratio': 1 / 12,
                     },
                 }
             ],
         }
-        self.assertEqual(response.data, expected)
+        self.assertEqual(response.data, expected)  # pylint: disable=no-member
 
     def test_list_view_with_sequentials(self):
-        response = self.client.get('/api/completion/v1/course/?requested_fields=sequential')
+        response = self.client.get('/api/completion/v0/course/?requested_fields=sequential')
         self.assertEqual(response.status_code, 200)
         expected = {
             'pagination': {'count': 1, 'previous': None, 'num_pages': 1, 'next': None},
@@ -81,7 +81,7 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
                     'completion': {
                         'earned': 1.0,
                         'possible': 12.0,
-                        'ratio': 1/12,
+                        'ratio': 1 / 12,
                     },
                     'sequential': [
                         {
@@ -93,30 +93,30 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
                 }
             ],
         }
-        self.assertEqual(response.data, expected)
+        self.assertEqual(response.data, expected)  # pylint: disable=no-member
 
     def test_detail_view(self):
-        response = self.client.get('/api/completion/v1/course/edX/toy/2012_Fall/')
+        response = self.client.get('/api/completion/v0/course/edX/toy/2012_Fall/')
         self.assertEqual(response.status_code, 200)
         expected = {
             'course_key': 'edX/toy/2012_Fall',
             'completion': {
                 'earned': 1.0,
                 'possible': 12.0,
-                'ratio': 1/12,
+                'ratio': 1 / 12,
             },
         }
-        self.assertEqual(response.data, expected)
+        self.assertEqual(response.data, expected)  # pylint: disable=no-member
 
     def test_detail_view_with_sequentials(self):
-        response = self.client.get('/api/completion/v1/course/edX/toy/2012_Fall/?requested_fields=sequential')
+        response = self.client.get('/api/completion/v0/course/edX/toy/2012_Fall/?requested_fields=sequential')
         self.assertEqual(response.status_code, 200)
         expected = {
             'course_key': 'edX/toy/2012_Fall',
             'completion': {
                 'earned': 1.0,
                 'possible': 12.0,
-                'ratio': 1/12,
+                'ratio': 1 / 12,
             },
             'sequential': [
                 {
@@ -126,23 +126,23 @@ class CompletionViewTestCase(SharedModuleStoreTestCase):
                 },
             ]
         }
-        self.assertEqual(response.data, expected)
+        self.assertEqual(response.data, expected)  # pylint: disable=no-member
 
     def test_unauthenticated(self):
         self.client.force_authenticate(None)
-        detailresponse = self.client.get('/api/completion/v1/course/edX/toy/2012_Fall/')
+        detailresponse = self.client.get('/api/completion/v0/course/edX/toy/2012_Fall/')
         self.assertEqual(detailresponse.status_code, 403)
-        listresponse = self.client.get('/api/completion/v1/course/')
+        listresponse = self.client.get('/api/completion/v0/course/')
         self.assertEqual(listresponse.status_code, 403)
 
     def test_wrong_user(self):
         user = UserFactory.create(username='wrong')
         self.client.force_authenticate(user)
-        response = self.client.get('/api/completion/v1/course/?user=test_user')
+        response = self.client.get('/api/completion/v0/course/?user=test_user')
         self.assertEqual(response.status_code, 404)
 
     def test_staff_access(self):
         user = AdminFactory.create(username='staff')
         self.client.force_authenticate(user)
-        response = self.client.get('/api/completion/v1/course/?user=test_user')
+        response = self.client.get('/api/completion/v0/course/?user=test_user')
         self.assertEqual(response.status_code, 200)
