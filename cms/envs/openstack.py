@@ -21,10 +21,9 @@ SWIFT_TEMP_URL_DURATION = AUTH_TOKENS.get('SWIFT_TEMP_URL_DURATION', 1800)  # se
 if AUTH_TOKENS.get('SWIFT_REGION_NAME'):
     SWIFT_EXTRA_OPTIONS = {'region_name': AUTH_TOKENS['SWIFT_REGION_NAME']}
 
-# if AUTH_TOKENS.get('DEFAULT_FILE_STORAGE'):
-#     DEFAULT_FILE_STORAGE = AUTH_TOKENS.get('DEFAULT_FILE_STORAGE')
-# elif SWIFT_AUTH_URL and SWIFT_USERNAME and SWIFT_KEY:
-#     DEFAULT_FILE_STORAGE = 'swift.storage.SwiftStorage'
-# else:
-#     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
-DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+if AUTH_TOKENS.get('DEFAULT_FILE_STORAGE'):
+    DEFAULT_FILE_STORAGE = AUTH_TOKENS.get('DEFAULT_FILE_STORAGE')
+elif SWIFT_AUTH_URL and SWIFT_USERNAME and SWIFT_KEY:
+    DEFAULT_FILE_STORAGE = 'swift.storage.SwiftStorage'
+else:
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'

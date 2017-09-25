@@ -63,8 +63,7 @@ TEMPLATE_DEBUG = False
 
 EMAIL_BACKEND = 'django_ses.SESBackend'
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto.S3BotoStorage'
-DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto.S3BotoStorage'
 
 GIT_REPO_EXPORT_DIR = '/edx/var/edxapp/export_course_repos'
 SESSION_INACTIVITY_TIMEOUT_IN_SECONDS = None
