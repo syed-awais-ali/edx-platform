@@ -18,6 +18,10 @@ from opaque_keys.edx.keys import CourseKey
 from opaque_keys.edx.locations import SlashSeparatedCourseKey
 
 from courseware.access import has_access
+from social_engagement.engagement import (
+    get_involved_users_in_thread,
+    get_involved_users_in_single_response_comments,
+)
 from util.file import store_uploaded_file
 from courseware.courses import get_course_with_access, get_course_overview_with_access, get_course_by_id
 from edx_notifications.lib.publisher import (
@@ -619,8 +623,9 @@ def delete_thread(request, course_id, thread_id):
     """
     course_key = CourseKey.from_string(course_id)
     thread = cc.Thread.find(thread_id)
+    involved_users = get_involved_users_in_thread(request, thread.id)
     thread.delete()
-    thread_deleted.send(sender=None, user=request.user, post=thread)
+    thread_deleted.send(sender=None, user=request.user, post=thread, involved_users=list(involved_users))
     return JsonResponse(prepare_content(thread.to_dict(), course_key))
 
 
@@ -707,8 +712,10 @@ def delete_comment(request, course_id, comment_id):
     """
     course_key = CourseKey.from_string(course_id)
     comment = cc.Comment.find(comment_id)
+    involved_users = get_involved_users_in_single_response_comments(request, comment.id,
+                            comment.parent_id, comment.thread_id)
     comment.delete()
-    comment_deleted.send(sender=None, user=request.user, post=comment)
+    comment_deleted.send(sender=None, user=request.user, post=comment, involved_users=list(involved_users))
     return JsonResponse(prepare_content(comment.to_dict(), course_key))
 
 
