@@ -1670,9 +1670,10 @@ class DiscussionService(object):
     def __init__(self, runtime):
         self.runtime = runtime
 
-    def get_course_template_context(self):
+    def get_course_template_context(self, request_context=None):
         """
         Returns the context to render the course-level discussion templates.
+        :param request_context (QueryDict) request parameters
 
         """
         # for some reason pylint reports courseware.access, courseware.courses and django_comment_client.forum.views
@@ -1704,7 +1705,8 @@ class DiscussionService(object):
         course = get_course_with_access(self.runtime.user, 'load', course_id, check_if_enrolled=True)
         user_cohort_id = get_cohort_id(user, course_id)
 
-        unsafethreads, query_params = get_threads(request, course, user_info)
+        discussion_id = request_context.get('discussion_id', None) if request_context else None
+        unsafethreads, query_params = get_threads(request, course, user_info, discussion_id=discussion_id)
         threads = [utils.prepare_content(thread, course_id) for thread in unsafethreads]
         utils.add_courseware_context(threads, course, user)
 

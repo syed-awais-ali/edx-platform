@@ -75,18 +75,16 @@ class DiscussionCourseXBlock(XBlock):
         if hasattr(self, 'xmodule_runtime') and getattr(self.xmodule_runtime, 'is_author_mode', False):
             fragment = self._student_view_studio()
         else:
-            fragment = self._student_view_lms()
+            fragment = self._student_view_lms(context)
 
         return fragment
 
-    def _student_view_lms(self):
+    def _student_view_lms(self, request_context):
         """ Renders student view for LMS """
         fragment = Fragment()
-
         self.add_resource_urls(fragment)
-
         discussion_service = self.xmodule_runtime.service(self, 'discussion')  # pylint: disable=no-member
-        context = discussion_service.get_course_template_context()
+        context = discussion_service.get_course_template_context(request_context)
         context['enable_new_post_btn'] = True
 
         fragment.add_content(self.runtime.render_template('discussion/_course_discussion_section.html', context))
