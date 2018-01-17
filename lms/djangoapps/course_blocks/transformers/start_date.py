@@ -79,3 +79,76 @@ class StartDateTransformer(FilteringTransformerMixin, BlockStructureTransformer)
             usage_info.course_key,
         )
         return [block_structure.create_removal_filter(removal_condition)]
+
+
+class StartEndDateFieldTransformer(BlockStructureTransformer):
+    """
+    A transformer that adds 'start' and `end` dates to course blocks.
+    """
+    WRITE_VERSION = 1
+    READ_VERSION = 1
+    MERGED_START_DATE = 'merged_start_date'
+    MERGED_END_DATE = 'merged_end_date'
+
+    @classmethod
+    def name(cls):
+        """
+        Unique identifier for the transformer's class;
+        same identifier used in setup.py.
+        """
+        return "start_end_date_field"
+
+    @classmethod
+    def _get_merged_date(cls, block_structure, block_key, date_field_name):
+        """
+        Returns the merged value for the start date for the block with
+        the given block_key in the given block_structure.
+        """
+        return block_structure.get_transformer_block_field(
+            block_key, cls, date_field_name, False
+        )
+
+    @classmethod
+    def collect(cls, block_structure):
+        """
+        Collects any information that's necessary to execute this
+        transformer's transform method.
+        """
+
+        collect_merged_date_field(
+            block_structure,
+            transformer=cls,
+            xblock_field_name='start',
+            merged_field_name=cls.MERGED_START_DATE,
+            default_date=DEFAULT_START_DATE,
+            func_merge_parents=min,
+            func_merge_ancestors=max,
+        )
+
+        collect_merged_date_field(
+            block_structure,
+            transformer=cls,
+            xblock_field_name='end',
+            merged_field_name=cls.MERGED_END_DATE,
+            default_date=None,
+            func_merge_parents=min,
+            func_merge_ancestors=max,
+        )
+
+    def transform(self, usage_info, block_structure):
+        """
+        Modify block structure by adding start date field.
+        """
+        for block_key in block_structure.topological_traversal():
+            block_structure.set_transformer_block_field(
+                block_key,
+                self,
+                'start',
+                self._get_merged_date(block_structure, block_key, self.MERGED_START_DATE),
+            )
+            block_structure.set_transformer_block_field(
+                block_key,
+                self,
+                'end',
+                self._get_merged_date(block_structure, block_key, self.MERGED_END_DATE),
+            )
