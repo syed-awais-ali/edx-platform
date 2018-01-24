@@ -440,4 +440,4 @@ class CompletionMobileViewTestCase(SharedModuleStoreTestCase):
             'pagination': {'count': expected_count, 'previous': None, 'num_pages': 1, 'next': None},
             'results': expected_results,
         }
-        self.assertEqual(response.data, expected)
+        self.assertEqual(response.data, expected)  # pylint: disable=no-member
