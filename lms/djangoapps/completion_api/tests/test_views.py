@@ -379,20 +379,20 @@ class CompletionBlockUpdateViewTestCase(SharedModuleStoreTestCase):
 @ddt.ddt
 class CompletionMobileViewTestCase(SharedModuleStoreTestCase):
     """
-    Test that the CompletionView with mobile courses.
+    Tests the CompletionView with mobile courses.
     """
 
     @classmethod
     def setUpClass(cls):
         super(CompletionMobileViewTestCase, cls).setUpClass()
-        cls.none_mobile_course = ToyCourseFactory.create()
+        cls.non_mobile_course = ToyCourseFactory.create()
         cls.mobile_course = ToyCourseFactory.create(mobile_available=True, course='mobile', run='2018_Spring')
 
     def setUp(self):
         super(CompletionMobileViewTestCase, self).setUp()
         self.test_user = UserFactory.create()
         CourseEnrollment.enroll(self.test_user, self.mobile_course.id)
-        CourseEnrollment.enroll(self.test_user, self.none_mobile_course.id)
+        CourseEnrollment.enroll(self.test_user, self.non_mobile_course.id)
         self.mobile_client = APIClient()
         self.mobile_client.force_authenticate(user=self.test_user)
 
@@ -411,7 +411,7 @@ class CompletionMobileViewTestCase(SharedModuleStoreTestCase):
             ]
         ),
         (
-            2,
+            1,
             [
                 {
                     'course_key': 'edX/mobile/2018_Spring',
