@@ -3,6 +3,7 @@ Test serialization of completion data.
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
 from datetime import datetime, timedelta
+from collections import OrderedDict
 
 from django.test.utils import override_settings
 from oauth2_provider import models as dot_models
@@ -391,8 +392,8 @@ class CompletionMobileViewTestCase(SharedModuleStoreTestCase):
     def setUp(self):
         super(CompletionMobileViewTestCase, self).setUp()
         self.test_user = UserFactory.create()
-        CourseEnrollment.enroll(self.test_user, self.mobile_course.id)
         CourseEnrollment.enroll(self.test_user, self.non_mobile_course.id)
+        CourseEnrollment.enroll(self.test_user, self.mobile_course.id)
         self.mobile_client = APIClient()
         self.mobile_client.force_authenticate(user=self.test_user)
 
@@ -400,41 +401,68 @@ class CompletionMobileViewTestCase(SharedModuleStoreTestCase):
         (
             1,
             [
-                {
-                    'course_key': 'edX/mobile/2018_Spring',
-                    'completion': {
-                        'earned': 1,
-                        'possible': 0,
-                        'ratio': 0,
-                    },
-                }
-            ]
+                OrderedDict(
+                    [
+                        (
+                            u'course_key', u'edX/mobile/2018_Spring'
+                        ),
+                        (
+                            u'completion',
+                            OrderedDict(
+                                [
+                                    (u'earned', 0.0),
+                                    (u'possible', 12.0),
+                                    (u'ratio', 0.0)
+                                ]
+                            )
+                        )
+                    ])
+            ],
+            True
         ),
         (
-            1,
+            2,
             [
-                {
-                    'course_key': 'edX/mobile/2018_Spring',
-                    'completion': {
-                        'earned': 1,
-                        'possible': 0,
-                        'ratio': 0,
-                    },
-                },
-                {
-                    'course_key': 'edX/toy/2012_Fall',
-                    'completion': {
-                        'earned': 0,
-                        'possible': 12.0,
-                        'ratio': 0,
-                    },
-                }
-            ]
+                OrderedDict(
+                    [
+                        (
+                            u'course_key', u'edX/mobile/2018_Spring'
+                        ),
+                        (
+                            u'completion',
+                            OrderedDict(
+                                [
+                                    (u'earned', 0.0),
+                                    (u'possible', 12.0),
+                                    (u'ratio', 0.0),
+                                ])
+                        )
+                    ]),
+                OrderedDict(
+                    [
+                        (
+                            u'course_key', u'edX/toy/2012_Fall'
+                        ),
+                        (
+                            u'completion',
+                            OrderedDict(
+                                [
+                                    (u'earned', 0.0),
+                                    (u'possible', 12.0),
+                                    (u'ratio', 0.0),
+                                ])
+                        )
+                    ])
+            ],
+            False
         )
     )
     @ddt.unpack
-    def test_list_view_mobile_only(self, expected_count, expected_results):
-        response = self.mobile_client.get('/api/completion/v0/course/')
+    def test_list_view_mobile_only(self, expected_count, expected_results, test_mobile_only_parameter):
+        if test_mobile_only_parameter:
+            response = self.mobile_client.get('/api/completion/v0/course/?mobile_only=true')
+        else:
+            response = self.mobile_client.get('/api/completion/v0/course/')
         self.assertEqual(response.status_code, 200)
         expected = {
             'pagination': {'count': expected_count, 'previous': None, 'num_pages': 1, 'next': None},
