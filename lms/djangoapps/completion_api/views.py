@@ -267,14 +267,12 @@ class CompletionListView(CompletionViewMixin, APIView):
             is_active=True).order_by('course_id')
 
         if mobile_only:
-            enrollments = CourseEnrollment.objects.filter(
-                user=self.get_user(),
-                is_active=True,
-                course_id__in=[CourseKey.from_string(key)
-                               for key in CourseOverview.objects.filter(mobile_available=True).values_list('id',
-                                                                                                           flat=True)
-                               ]
-            )
+            course_keys = []
+            for course_enrollment in enrollments:
+                course_keys.append(course_enrollment.course_id)
+                course_overview_list = CourseOverview.objects.filter(id__in=course_keys, mobile_available=True)
+                filtered_course_overview = [overview.id for overview in course_overview_list]
+                enrollments = enrollments.filter(course_id__in=filtered_course_overview)
 
         paginated = self.paginator.paginate_queryset(enrollments, self.request, view=self)
 
