@@ -271,8 +271,8 @@ class CompletionListView(CompletionViewMixin, APIView):
             for course_enrollment in enrollments:
                 course_keys.append(course_enrollment.course_id)
                 course_overview_list = CourseOverview.objects.filter(id__in=course_keys, mobile_available=True)
-                filtered_course_overview = [overview.id for overview in course_overview_list]
-                enrollments = enrollments.filter(course_id__in=filtered_course_overview)
+            filtered_course_overview = [overview.id for overview in course_overview_list]
+            enrollments = enrollments.filter(course_id__in=filtered_course_overview)
 
         paginated = self.paginator.paginate_queryset(enrollments, self.request, view=self)
 
