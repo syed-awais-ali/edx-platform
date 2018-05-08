@@ -4,7 +4,7 @@ Block Completion Transformer
 
 from xblock.completable import XBlockCompletionMode as CompletionMode
 
-from lms.djangoapps.completion.models import BlockCompletion
+from completion.models import BlockCompletion
 from openedx.core.djangoapps.content.block_structure.transformer import BlockStructureTransformer
 
 
@@ -12,7 +12,7 @@ class BlockCompletionTransformer(BlockStructureTransformer):
     """
     Keep track of the completion of each block within the block structure.
     """
-    READ_VERSION = 0
+    READ_VERSION = 1
     WRITE_VERSION = 1
     COMPLETION = 'completion'
 

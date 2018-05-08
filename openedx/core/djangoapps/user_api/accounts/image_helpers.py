@@ -58,7 +58,6 @@ def _get_profile_image_urls(name, storage, file_extension=PROFILE_IMAGE_FILE_EXT
     return {size_display_name: _make_url(size) for size_display_name, size in settings.PROFILE_IMAGE_SIZES_MAP.items()}
 
 
-
 def get_profile_image_names(username):
     """
     Returns a dict containing the filenames for a complete set of profile

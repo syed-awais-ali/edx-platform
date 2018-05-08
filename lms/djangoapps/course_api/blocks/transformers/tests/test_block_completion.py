@@ -4,8 +4,8 @@ Tests for BlockCompletionTransformer.
 from xblock.core import XBlock
 from xblock.completable import CompletableXBlockMixin, XBlockCompletionMode
 
-from lms.djangoapps.completion.models import BlockCompletion
-from lms.djangoapps.completion.test_utils import CompletionWaffleTestMixin
+from completion.models import BlockCompletion
+from completion.test_utils import CompletionWaffleTestMixin
 from lms.djangoapps.course_api.blocks.transformers.block_completion import BlockCompletionTransformer
 from lms.djangoapps.course_blocks.transformers.tests.helpers import ModuleStoreTestCase, TransformerRegistryTestMixin
 from student.tests.factories import UserFactory
