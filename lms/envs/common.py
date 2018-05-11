@@ -2261,6 +2261,7 @@ INSTALLED_APPS = (
 
     # Completion
     'completion',
+    'completion_aggregator',
 )
 
 ######################### CSRF #########################################
