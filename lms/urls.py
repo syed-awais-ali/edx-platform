@@ -139,10 +139,10 @@ if settings.FEATURES.get('EDX_SOLUTIONS_API'):
 
 # COMPLETION
 
-urlpatterns += [
+urlpatterns += (
     url(r'^api/completion/', include('completion.api.urls', namespace='completion')),
     url(r'^api/completion-aggregator/', include('completion_aggregator.urls')),
-]
+)
 
 # OPEN EDX USER API
 # mattdrayer: Please note that the user_api declaration must follow
